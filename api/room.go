@@ -56,7 +56,7 @@ func (h *RoomHandler) GetRoomQR(c *gin.Context) {
     base := config.AppConfig.AllowedOrigin
     if base == "" {
         // 기본값(개발): 로컬 프론트엔드 가정
-        base = "http://localhost:3000"
+        base = "http://localhost:5173"
     }
     joinURL := base + "/room/" + roomUuid
     // 서버는 QR 이미지를 직접 생성하지 않고, 클라이언트가 QR을 생성할 수 있도록 링크를 반환
