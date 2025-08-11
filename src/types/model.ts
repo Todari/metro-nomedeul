@@ -8,6 +8,7 @@ export interface Room {
 export interface MetronomeState {
   isPlaying: boolean;
   tempo: number;
+  beats: number;
   startTime: number;
   serverTime: number;
   roomUuid: string;

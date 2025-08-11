@@ -6,33 +6,47 @@ export const useWebSocket = (url: string) => {
   const [messages, setMessages] = useState<MetronomeState[]>([]);
 
   useEffect(() => {
-    socket.current = new WebSocket(url);
+    let backoffMs = 500;
+    let shouldReconnect = true;
 
-    socket.current.onopen = () => {
-      console.log('WebSocket connection opened');
-    };
+    function connect() {
+      const ws = new WebSocket(url);
+      socket.current = ws;
 
-    socket.current.onmessage = event => {
-      const data = JSON.parse(event.data);
-      console.log('WebSocket message received:', data);
-      setMessages(prevMessages => [...prevMessages, data]);
-    };
+      ws.onopen = () => {
+        backoffMs = 500; // reset
+        console.log('WebSocket connection opened');
+      };
 
-    socket.current.onclose = () => {
-      console.log('WebSocket connection closed');
-    };
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        setMessages((prev) => [...prev, data]);
+      };
 
-    socket.current.onerror = error => {
-      console.error('WebSocket error:', error);
-    };
+      ws.onclose = () => {
+        console.log('WebSocket connection closed');
+        if (!shouldReconnect) return;
+        const nextDelay = Math.min(backoffMs, 10_000);
+        setTimeout(() => {
+          backoffMs = Math.min(backoffMs * 2, 10_000);
+          connect();
+        }, nextDelay);
+      };
 
+      ws.onerror = () => {
+        // error handled by onclose flow
+      };
+    }
+
+    connect();
     return () => {
+      shouldReconnect = false;
       socket.current?.close();
     };
   }, [url]);
 
-  const sendMessage = useCallback((message: any) => {
-    if (socket.current) {
+  const sendMessage = useCallback((message: unknown) => {
+    if (socket.current && socket.current.readyState === WebSocket.OPEN) {
       socket.current.send(JSON.stringify(message));
     }
   }, []);

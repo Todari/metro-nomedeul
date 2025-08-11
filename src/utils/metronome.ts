@@ -18,16 +18,41 @@ export class Metronome {
   private onPlayStateChange: ((isPlaying: boolean) => void) | null = null;
 
   constructor(websocket: WebSocket) {
-    this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const AudioContextCtor = ((window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext; }).AudioContext
+      ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext);
+    if (!AudioContextCtor) {
+      throw new Error('AudioContext is not supported');
+    }
+    this.audioContext = new AudioContextCtor();
     this.websocket = websocket;
     this.initWorker();
     this.loadSounds();
     
     // 웹소켓 메시지 처리
-    this.websocket.addEventListener('message', (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === 'metronomeState') {
-        this.handleMetronomeState(data);
+    this.websocket.addEventListener('message', (event: MessageEvent<string>) => {
+      try {
+        const parsed = JSON.parse(event.data) as {
+          type?: string;
+          isPlaying?: boolean;
+          tempo?: number;
+          beats?: number;
+          startTime?: number;
+          serverTime?: number;
+          roomUuid?: string;
+        };
+        if (parsed && parsed.type === 'metronomeState') {
+          this.handleMetronomeState({
+            type: 'metronomeState',
+            isPlaying: Boolean(parsed.isPlaying),
+            tempo: Number(parsed.tempo ?? this.tempo),
+            beats: Number(parsed.beats ?? this.beatsPerBar),
+            startTime: Number(parsed.startTime ?? Date.now()),
+            serverTime: Number(parsed.serverTime ?? Date.now()),
+            roomUuid: String(parsed.roomUuid ?? ''),
+          });
+        }
+      } catch {
+        // ignore invalid json
       }
     });
   }
@@ -84,7 +109,7 @@ export class Metronome {
   }
 
   // 메트로놈 상태 처리
-  private handleMetronomeState(state: any) {
+  private handleMetronomeState(state: { type: string; isPlaying: boolean; tempo: number; beats: number; startTime: number; serverTime: number; roomUuid: string; }) {
     console.log('메트로놈 상태 수신:', state);
     
     // 서버와 클라이언트 시간 차이 계산
@@ -96,6 +121,14 @@ export class Metronome {
       this.tempo = state.tempo;
       if (this.onTempoChange) {
         this.onTempoChange(this.tempo);
+      }
+    }
+
+    // 박자 업데이트
+    if (typeof state.beats === 'number' && this.beatsPerBar !== state.beats) {
+      this.beatsPerBar = state.beats;
+      if (this.onBeatsChange) {
+        this.onBeatsChange(this.beatsPerBar);
       }
     }
     
@@ -231,6 +264,14 @@ export class Metronome {
 
   public getBeats(): number {
     return this.beatsPerBar;
+  }
+
+  // 외부에서 박자를 직접 세팅해야 하는 경우를 대비
+  public setBeats(beats: number) {
+    this.beatsPerBar = beats;
+    if (this.onBeatsChange) {
+      this.onBeatsChange(this.beatsPerBar);
+    }
   }
 
   // 현재 재생 상태 반환
