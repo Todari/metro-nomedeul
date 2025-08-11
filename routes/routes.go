@@ -19,10 +19,11 @@ func SetupRouter(roomHandler *api.RoomHandler, websocketHandler *api.WebSocketHa
 		AllowCredentials: true,
 	}))
 
-	roomRoutes := r.Group("/room")
+    roomRoutes := r.Group("/room")
 	{
 		roomRoutes.POST("", roomHandler.RegisterRoom)
 		roomRoutes.GET("/:uuid", roomHandler.GetRoom)
+    roomRoutes.GET("/:uuid/qr", roomHandler.GetRoomQR)
 	}
 
 	wsRoutes := r.Group("/ws")

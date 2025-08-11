@@ -106,9 +106,9 @@ func (s *WebSocketService) StartMetronome(roomUuid string, tempo int, beats int)
 	now := time.Now().UnixMilli()
 	
 	// 메트로놈 상태 생성 또는 업데이트
+    s.metronomeMux.Lock()
     state, exists := s.metronomeData[roomUuid]
     if !exists {
-        // 새 메트로놈 상태 생성
         state = &MetronomeState{
             IsPlaying:  true,
             Tempo:      tempo,
@@ -120,7 +120,6 @@ func (s *WebSocketService) StartMetronome(roomUuid string, tempo int, beats int)
         }
         s.metronomeData[roomUuid] = state
     } else {
-        // 기존 메트로놈 상태 업데이트
         state.IsPlaying = true
         state.Tempo = tempo
         state.Beats = beats
@@ -174,16 +173,14 @@ func (s *WebSocketService) stopSyncTicker(roomUuid string) {
 
 // 메트로놈 상태 브로드캐스트
 func (s *WebSocketService) BroadcastMetronomeState(roomUuid string) {
-	s.metronomeMux.RLock()
-	state, exists := s.metronomeData[roomUuid]
-	if !exists {
-		s.metronomeMux.RUnlock()
-		return
-	}
-	
-	// 현재 서버 시간 업데이트
-	state.ServerTime = time.Now().UnixMilli()
-	s.metronomeMux.RUnlock()
+    s.metronomeMux.Lock()
+    state, exists := s.metronomeData[roomUuid]
+    if !exists {
+        s.metronomeMux.Unlock()
+        return
+    }
+    state.ServerTime = time.Now().UnixMilli()
+    s.metronomeMux.Unlock()
 	
 	s.clientsMux.RLock()
 	defer s.clientsMux.RUnlock()
@@ -201,18 +198,17 @@ func (s *WebSocketService) BroadcastMetronomeState(roomUuid string) {
 
 // 새 클라이언트 연결 시 현재 메트로놈 상태 전송
 func (s *WebSocketService) SendCurrentMetronomeState(client *Client) {
-	s.metronomeMux.RLock()
-	defer s.metronomeMux.RUnlock()
-	
-	state, exists := s.metronomeData[client.RoomUuid]
-	if exists {
-		// 현재 서버 시간 업데이트
-		state.ServerTime = time.Now().UnixMilli()
-		err := client.Conn.WriteJSON(state)
-		if err != nil {
-			log.Printf("메트로놈 상태 전송 실패 (클라이언트 %s): %v", client.ID, err)
-		}
-	}
+    s.metronomeMux.Lock()
+    state, exists := s.metronomeData[client.RoomUuid]
+    if exists {
+        state.ServerTime = time.Now().UnixMilli()
+    }
+    s.metronomeMux.Unlock()
+    if exists {
+        if err := client.Conn.WriteJSON(state); err != nil {
+            log.Printf("메트로놈 상태 전송 실패 (클라이언트 %s): %v", client.ID, err)
+        }
+    }
 }
 
 // 메트로놈 정지
