@@ -8,7 +8,7 @@
 - 메인 페이지: 기능 소개 + [방 생성하기], [방 입장하기]
 - 방 생성하기: 즉시 임의의 UUID로 방 생성
 - 방 페이지 기능:
-  - 방 입장용 QR (서버는 `joinUrl`을 제공, 프론트에서 QR 생성/표시)
+  - 방 입장용 QR (프론트에서 방 `uuid`로 직접 생성/표시)
   - 메트로놈 시작/정지 버튼
   - BPM(tempo) 및 박자(beats) 조절
 - 방 입장하기: 카메라로 QR 스캔 → 해당 방으로 라우팅
@@ -53,8 +53,7 @@ curl -s -X POST http://localhost:8080/room
 # 방 조회
 curl -s http://localhost:8080/room/<UUID>
 
-# 방 QR용 joinUrl
-curl -s http://localhost:8080/room/<UUID>/qr
+# (QR은 프론트에서 uuid로 직접 생성)
 ```
 
 ### 2) 로컬 실행
@@ -84,7 +83,7 @@ JWT_SECRET=change_me
 
 - `POST /room` → 방 생성: `{ uuid: string }`
 - `GET /room/:uuid` → 방 조회: 방 문서 반환
-- `GET /room/:uuid/qr` → 입장용 URL 반환: `{ joinUrl: "<프론트주소>/room/:uuid" }`
+  
 
 ### WebSocket
 
