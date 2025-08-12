@@ -3,6 +3,7 @@ package api
 import (
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/Todari/metro-nomedeul-server/config"
 	"github.com/Todari/metro-nomedeul-server/services"
@@ -21,11 +22,16 @@ func NewWebSocketHandler(service *services.WebSocketService) *WebSocketHandler {
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		origin := r.Header.Get("Origin")
-		// 개발 환경에서는 모든 출처 허용 (필요시)
-		// if config.AppConfig.Environment == "development" {
-		// 	return true
-		// }
-		return origin == config.AppConfig.AllowedOrigin
+		allowed := config.GetAllowedOrigins()
+		if len(allowed) == 0 {
+			return true
+		}
+		for _, a := range allowed {
+			if strings.EqualFold(strings.TrimSpace(a), origin) {
+				return true
+			}
+		}
+		return false
 	},
 }
 
