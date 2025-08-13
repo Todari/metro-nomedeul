@@ -1,8 +1,10 @@
 import axios, {AxiosRequestConfig} from 'axios';
+import { CONFIG } from '../apis/config';
 
 const DEFAULT_TIMEOUT = 5000;
 
 const axiosInstance = axios.create({
+  baseURL: CONFIG.API_URL || undefined,
   timeout: DEFAULT_TIMEOUT,
 });
 
