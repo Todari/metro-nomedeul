@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { css } from "../../../styled-system/css";
+import { vstack } from "../../../styled-system/patterns";
 import { useParams } from "react-router-dom";
 import { useWebSocket } from "../../hooks/useWebSocket";
 import { CONFIG } from "../../apis/config";
@@ -36,9 +38,13 @@ export const RoomPage = () => {
   };
 
   return (
-  <>
-      <h1>메트로놈들</h1>
-      {uuid && <QrDisplay uuid={uuid} />}
+    <div className={vstack({ gap: 6, alignItems: 'stretch' })}>
+      <h1 className={css({ color: 'gray.900', fontSize: '2xl', fontWeight: 'bold', letterSpacing: '-0.02em' })}>메트로놈들</h1>
+      {uuid && (
+        <div className={css({ p: 4, bg: 'white', rounded: 'xl', border: '1px solid', borderColor: 'gray.300', shadow: 'sm' })}>
+          <QrDisplay uuid={uuid} />
+        </div>
+      )}
       <MetronomeControls
         isPlaying={isPlaying}
         tempo={localTempo}
@@ -48,5 +54,6 @@ export const RoomPage = () => {
         onTempoChange={(t) => { setLocalTempo(t); changeTempo(t); }}
         onBeatsChange={(b) => { setLocalBeats(b); changeBeats(b); }}
       />
-    </>);
+    </div>
+  );
 };

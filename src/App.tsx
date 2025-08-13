@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { css } from "../styled-system/css";
+import { vstack, hstack } from "../styled-system/patterns";
 import { useRequestPostRoom } from "./hooks/useRequestPostRoom";
 import { useNavigate } from "react-router-dom";
 import { QrScanner } from "./components/QrScanner";
@@ -19,12 +21,47 @@ function App() {
   }, [isSuccess, data, navigate]);
 
   return (
-    <>
-      <h1>메트로놈들</h1>
-      <button onClick={handleCreateRoom}>방 생성하기</button>
-      <button onClick={() => setShowScanner((v) => !v)}>방 입장하기</button>
+    <div className={vstack({ gap: 6, alignItems: 'stretch' })}>
+      <div className={vstack({ gap: 2, alignItems: 'flex-start' })}>
+        <h1 className={css({ color: 'gray.900', fontSize: '2xl', fontWeight: 'bold', letterSpacing: '-0.02em' })}>메트로놈들</h1>
+        <p className={css({ color: 'gray.700', fontSize: 'sm' })}>방을 생성하거나 QR로 입장하세요</p>
+      </div>
+
+      <div className={hstack({ gap: 3 })}>
+        <button
+          className={css({
+            px: 4,
+            py: 2.5,
+            rounded: 'lg',
+            bg: 'blue.600',
+            color: 'white',
+            _hover: { bg: 'blue.700' },
+            _active: { bg: 'blue.800' },
+            transition: 'background-color 0.2s ease'
+          })}
+          onClick={handleCreateRoom}
+        >
+          방 생성하기
+        </button>
+        <button
+          className={css({
+            px: 4,
+            py: 2.5,
+            rounded: 'lg',
+            bg: 'gray.300',
+            color: 'black',
+            _hover: { bg: 'gray.400' },
+            _active: { bg: 'gray.500' },
+            transition: 'background-color 0.2s ease'
+          })}
+          onClick={() => setShowScanner((v) => !v)}
+        >
+          방 입장하기
+        </button>
+      </div>
+
       {showScanner && (
-        <div style={{ marginTop: 16 }}>
+        <div className={css({ mt: 4, p: 4, bg: 'white/70', rounded: 'xl', backdropFilter: 'saturate(180%) blur(8px)', border: '1px solid', borderColor: 'gray.300' })}>
           <QrScanner
             onDetected={(text) => {
               try {
@@ -35,7 +72,6 @@ function App() {
                   navigate(`/room/${parts[idx + 1]}`);
                 }
               } catch {
-                // 텍스트에 URL이 없으면 uuid로 가정
                 navigate(`/room/${text}`);
               }
             }}
@@ -46,7 +82,7 @@ function App() {
           />
         </div>
       )}
-    </>
+    </div>
   )
 }
 

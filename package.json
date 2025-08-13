@@ -4,10 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "panda codegen --watch & vite",
+    "build": "panda codegen && tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "panda": "panda codegen"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.67.2",

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { css } from "../../styled-system/css";
 
 declare global {
   interface Window {
@@ -72,9 +73,10 @@ export function QrScanner({ onDetected, onError }: QrScannerProps) {
 
   if (unsupported) {
     return (
-      <div>
-        <p>카메라 접근이 불가하거나 브라우저가 QR 감지를 지원하지 않습니다.</p>
+      <div className={css({ p: 4, bg: 'yellow.300', color: 'yellow.800', rounded: 'md', border: '1px solid', borderColor: 'yellow.600' })}>
+        <p className={css({ mb: 2 })}>카메라 접근이 불가하거나 브라우저가 QR 감지를 지원하지 않습니다.</p>
         <input
+          className={css({ px: 3, py: 2, rounded: 'md', border: '1px solid', borderColor: 'gray.300', bg: 'white' })}
           type="file"
           accept="image/*"
           onChange={() => onError?.(new Error('이미지 업로드 기반 QR 스캔은 미구현'))}
@@ -85,7 +87,7 @@ export function QrScanner({ onDetected, onError }: QrScannerProps) {
 
   return (
     <div>
-      <video ref={videoRef} playsInline style={{ width: '100%', maxWidth: 480, borderRadius: 8 }} />
+      <video className={css({ w: 'full', maxW: '480px', rounded: 'lg', border: '1px solid', borderColor: 'gray.4', shadow: 'sm' })} ref={videoRef} playsInline />
     </div>
   );
 }

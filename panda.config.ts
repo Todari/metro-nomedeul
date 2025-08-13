@@ -4,6 +4,9 @@ export default defineConfig({
   // Whether to use css reset
   preflight: true,
 
+  // Use opinionated preset with color scales (gray.1~12, blue.9, etc.)
+  presets: ["@pandacss/preset-panda"],
+
   // Where to look for your css declarations
   include: ["./src/**/*.{js,jsx,ts,tsx}", "./pages/**/*.{js,jsx,ts,tsx}"],
 

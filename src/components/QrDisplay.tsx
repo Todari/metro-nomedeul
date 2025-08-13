@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react';
+import { css } from "../../styled-system/css";
 import { useQuery } from '@tanstack/react-query';
 import { http } from '../utils/http';
 import { CONFIG } from '../apis/config';
@@ -33,13 +34,13 @@ export function QrDisplay({ uuid }: QrDisplayProps) {
     // no-op: 추후 클라이언트 사이드 QR 렌더러로 대체 가능
   }, [joinUrl]);
 
-  if (isLoading) return <div>QR 로딩 중…</div>;
-  if (isError || !joinUrl) return <div>QR 로드 실패</div>;
+  if (isLoading) return <div className={css({ p: 4, rounded: 'md', bg: 'gray.300' })}>QR 로딩 중…</div>;
+  if (isError || !joinUrl) return <div className={css({ p: 4, rounded: 'md', bg: 'red.300', color: 'red.800' })}>QR 로드 실패</div>;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-      <img src={qrImgSrc} width={240} height={240} alt="방 입장 QR" />
-      <div style={{ fontSize: 12, wordBreak: 'break-all' }}>{joinUrl}</div>
+    <div className={css({ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 })}>
+      <img className={css({ rounded: 'lg', border: '1px solid', borderColor: 'gray.300', shadow: 'sm' })} src={qrImgSrc} width={240} height={240} alt="방 입장 QR" />
+      <div className={css({ fontSize: 'xs', wordBreak: 'break-all', color: 'gray.700' })}>{joinUrl}</div>
     </div>
   );
 }
