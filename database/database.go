@@ -14,8 +14,6 @@ var Client *mongo.Client
 var DB *mongo.Database
 
 func ConnectDatabase() {
-	config.LoadConfig()
-
 	// MongoDB 연결 문자열 생성
 	uri := config.AppConfig.DatabaseURL
 
@@ -43,4 +41,24 @@ func ConnectDatabase() {
 	// 데이터베이스 선택
 	DB = client.Database(config.AppConfig.DatabaseName)
 	Client = client
+}
+
+// DisconnectDatabase는 애플리케이션 종료 시점에 MongoDB 연결을 정리합니다.
+func DisconnectDatabase(ctx context.Context) {
+	if Client == nil {
+		return
+	}
+	if err := Client.Disconnect(ctx); err != nil {
+		log.Println("⚠️ Failed to disconnect the database:", err)
+		return
+	}
+	log.Println("🛑 Database disconnected")
+}
+
+// Ping은 데이터베이스 연결 상태를 확인합니다.
+func Ping(ctx context.Context) error {
+	if Client == nil {
+		return mongo.ErrClientDisconnected
+	}
+	return Client.Ping(ctx, nil)
 }

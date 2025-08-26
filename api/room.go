@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 
+	"github.com/Todari/metro-nomedeul-server/repository"
 	"github.com/Todari/metro-nomedeul-server/services"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -35,7 +36,11 @@ func (h *RoomHandler) GetRoom(c *gin.Context) {
 
 	room, err := h.Service.GetRoom(roomUuid)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Room not found"})
+		if err == repository.ErrRoomNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Room not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
 

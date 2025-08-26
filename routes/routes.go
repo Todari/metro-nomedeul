@@ -14,7 +14,7 @@ func SetupRouter(roomHandler *api.RoomHandler, websocketHandler *api.WebSocketHa
     allowed := config.GetAllowedOrigins()
     c := cors.Config{
         AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-        AllowHeaders:     []string{"baggage", "content-type", "sentry-trace"},
+        AllowHeaders:     []string{"baggage", "content-type", "sentry-trace", "authorization"},
         ExposeHeaders:    []string{"Content-Length"},
         AllowCredentials: true,
     }
@@ -25,6 +25,11 @@ func SetupRouter(roomHandler *api.RoomHandler, websocketHandler *api.WebSocketHa
         c.AllowOrigins = allowed
     }
     r.Use(cors.New(c))
+
+    // 헬스체크
+    r.GET("/health", func(c *gin.Context) {
+        c.JSON(200, gin.H{"status": "ok"})
+    })
 
     roomRoutes := r.Group("/room")
 	{

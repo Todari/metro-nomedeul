@@ -22,7 +22,7 @@ func (s *RoomService) RegisterRoom() (string, error) {
 	room := models.Room{Uuid: uuid, CreatedAt: now, UpdatedAt: now}
 	err := s.Repo.CreateRoom(&room)
 	if err != nil {
-		return "error: Failed to create room", err
+		return "", err
 	}
 	return uuid, nil
 }
