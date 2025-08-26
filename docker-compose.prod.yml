@@ -1,0 +1,15 @@
+services:
+  api:
+    environment:
+      - PORT=${PORT}
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_NAME=${DATABASE_NAME}
+      - ALLOWED_ORIGIN=${ALLOWED_ORIGIN}
+      - JWT_SECRET=${JWT_SECRET}
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  mongo:
+    ports: []         # 공개 포트 제거
+    restart: unless-stopped
