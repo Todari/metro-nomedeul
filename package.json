@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "panda codegen --watch & vite",
     "build": "panda codegen && tsc -b && vite build",
+    "prepare": "panda codegen",
+    "postinstall": "panda codegen",
     "lint": "eslint .",
     "preview": "vite preview",
     "panda": "panda codegen"
