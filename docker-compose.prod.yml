@@ -1,5 +1,7 @@
 services:
   api:
+    image: todari/metronomdeul:prod
+    container_name: metronomdeul
     environment:
       - PORT=${PORT}
       - DATABASE_URL=${DATABASE_URL}
@@ -8,8 +10,17 @@ services:
       - JWT_SECRET=${JWT_SECRET}
     ports:
       - "8080:8080"
+    depends_on:
+      - mongo
     restart: unless-stopped
 
   mongo:
-    ports: []         # 공개 포트 제거
+    image: mongo:8
+    container_name: metronomdeul-mongo
+    # 프로덕션: 외부 노출 금지(포트 맵핑 제거)
+    volumes:
+      - mongo_data:/data/db
     restart: unless-stopped
+
+volumes:
+  mongo_data:
