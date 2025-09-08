@@ -5,6 +5,7 @@
 - 요구사항: [requirements.md](./requirements.md)
 - 아키텍처(프론트+백엔드): [architecture.md](./architecture.md)
 - API 및 실시간 프로토콜(REST+WebSocket): [api.md](./api.md)
+- 기능 상세 가이드: [features.md](./features.md)
 - 환경 설정(.env, 서버/클라이언트): [environment.md](./environment.md)
 - 배포 가이드(클라이언트/Vercel, 서버/Docker): [deployment.md](./deployment.md)
 - 협업 가이드: [collaboration.md](./collaboration.md)

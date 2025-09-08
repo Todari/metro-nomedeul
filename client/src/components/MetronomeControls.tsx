@@ -84,5 +84,3 @@ export function MetronomeControls(props: MetronomeControlsProps) {
     </div>
   );
 }
-
-

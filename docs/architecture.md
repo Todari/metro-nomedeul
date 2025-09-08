@@ -35,13 +35,13 @@ server/
 ```
 
 ## 라우팅
-- `/` 메인: 방 생성, QR 스캐너 토글.
-- `/room/:uuid` 방: QR 표시, 메트로놈 컨트롤, WebSocket 연결.
+- `/` 메인: 방 생성, QR 스캐너, 방 ID 직접 입력.
+- `/room/:id` 방: QR 표시, 메트로놈 컨트롤, WebSocket 연결.
 
 서버 라우팅
-- `POST /room` 방 생성(201 `{ uuid }` 반환)
-- `GET /room/:uuid` 방 조회(200 Room 문서)
-- `GET /ws/:uuid` WebSocket 업그레이드(쿼리 `userId`)
+- `POST /room` 방 생성(201 `{ uuid }` 반환, 8자리 nanoid)
+- `GET /room/:id` 방 조회(200 Room 문서, nanoid 검증)
+- `GET /ws/:id` WebSocket 업그레이드(쿼리 `userId`)
 - `GET /health` 헬스체크
 
 ## 실시간 동기화 흐름
@@ -59,6 +59,8 @@ server/
 - AudioContext 생성, 클릭/강박 사운드 로드(`/sounds/click.mp3`, `/sounds/accent.mp3`).
 - 서버 상태 수신 시 템포/박자/재생 상태를 반영.
 - `requestStart/Stop/ChangeTempo/ChangeBeats`로 서버에 액션 전송.
+- Tab BPM 기능: 사용자 탭 간격을 측정하여 평균 BPM 계산 (최근 4번 탭 기준).
+- 자연스러운 BPM 변경: 박자 위치를 유지하면서 간격만 조정하는 알고리즘 구현.
 
 ## 상태 관리
 - React Query: 방 생성 뮤테이션 성공 시 `QUERY_KEYS.ROOMS` 무효화.
