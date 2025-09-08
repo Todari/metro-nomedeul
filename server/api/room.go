@@ -2,11 +2,11 @@ package api
 
 import (
 	"net/http"
+	"regexp"
 
 	"github.com/Todari/metro-nomedeul-server/repository"
 	"github.com/Todari/metro-nomedeul-server/services"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 type RoomHandler struct {
@@ -29,8 +29,9 @@ func (h *RoomHandler) RegisterRoom(c *gin.Context) {
 
 func (h *RoomHandler) GetRoom(c *gin.Context) {
 	roomUuid := c.Param("uuid")
-	if _, err := uuid.Parse(roomUuid); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid room UUID"})
+	// nanoid는 8자리 영숫자 문자열이므로 간단한 정규식으로 검증
+	if matched, _ := regexp.MatchString(`^[A-Za-z0-9_-]{8}$`, roomUuid); !matched {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid room ID format"})
 		return
 	}
 

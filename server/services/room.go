@@ -5,7 +5,7 @@ import (
 
 	"github.com/Todari/metro-nomedeul-server/models"
 	"github.com/Todari/metro-nomedeul-server/repository"
-	"github.com/google/uuid"
+	nanoid "github.com/matoous/go-nanoid/v2"
 )
 
 type RoomService struct {
@@ -17,14 +17,18 @@ func NewRoomService(repo *repository.RoomRepository) *RoomService {
 }
 
 func (s *RoomService) RegisterRoom() (string, error) {
-	uuid := uuid.New().String()
-	now := time.Now()
-	room := models.Room{Uuid: uuid, CreatedAt: now, UpdatedAt: now}
-	err := s.Repo.CreateRoom(&room)
+	// nanoid를 사용하여 8자리 짧은 ID 생성 (URL-safe, 충돌 확률 낮음)
+	roomId, err := nanoid.New(8)
 	if err != nil {
 		return "", err
 	}
-	return uuid, nil
+	now := time.Now()
+	room := models.Room{Uuid: roomId, CreatedAt: now, UpdatedAt: now}
+	err = s.Repo.CreateRoom(&room)
+	if err != nil {
+		return "", err
+	}
+	return roomId, nil
 }
 
 func (s *RoomService) GetRoom(uuid string) (*models.Room, error) {
