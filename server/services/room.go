@@ -1,6 +1,7 @@
 package services
 
 import (
+	"log"
 	"time"
 
 	"github.com/Todari/metro-nomedeul-server/models"
@@ -22,16 +23,18 @@ func (s *RoomService) RegisterRoom() (string, error) {
 	if err != nil {
 		return "", err
 	}
+	log.Printf("Generated nanoid: %s", roomId)
 	now := time.Now()
-	room := models.Room{Uuid: roomId, CreatedAt: now, UpdatedAt: now}
+	room := models.Room{RoomId: roomId, CreatedAt: now, UpdatedAt: now}
 	err = s.Repo.CreateRoom(&room)
 	if err != nil {
 		return "", err
 	}
+	log.Printf("Created room with ID: %s", roomId)
 	return roomId, nil
 }
 
-func (s *RoomService) GetRoom(uuid string) (*models.Room, error) {
-	return s.Repo.GetRoom(uuid)
+func (s *RoomService) GetRoom(roomId string) (*models.Room, error) {
+	return s.Repo.GetRoom(roomId)
 }
 

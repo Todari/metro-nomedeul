@@ -17,12 +17,12 @@ type RoomRepository struct {
 
 func NewRoomRepository(db *mongo.Database) *RoomRepository {
 	r := &RoomRepository{Collection: db.Collection("rooms")}
-	// uuid 유니크 인덱스 보장 (존재하면 noop)
+	// room_id 유니크 인덱스 보장 (존재하면 noop)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	_, _ = r.Collection.Indexes().CreateOne(ctx, mongo.IndexModel{
-		Keys:    bson.M{"uuid": 1},
-		Options: options.Index().SetUnique(true).SetName("uniq_uuid"),
+		Keys:    bson.M{"room_id": 1},
+		Options: options.Index().SetUnique(true).SetName("uniq_room_id"),
 	})
 	return r
 }
@@ -35,12 +35,12 @@ func (r *RoomRepository) CreateRoom(room *models.Room) error {
 	return err
 }
 
-func (r *RoomRepository) GetRoom(uuid string) (*models.Room, error) {
+func (r *RoomRepository) GetRoom(roomId string) (*models.Room, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	
 	var room models.Room
-	err := r.Collection.FindOne(ctx, bson.M{"uuid": uuid}).Decode(&room)
+	err := r.Collection.FindOne(ctx, bson.M{"room_id": roomId}).Decode(&room)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrRoomNotFound

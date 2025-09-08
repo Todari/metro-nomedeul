@@ -61,6 +61,7 @@ server/
 - `requestStart/Stop/ChangeTempo/ChangeBeats`로 서버에 액션 전송.
 - Tab BPM 기능: 사용자 탭 간격을 측정하여 평균 BPM 계산 (최근 4번 탭 기준).
 - 자연스러운 BPM 변경: 박자 위치를 유지하면서 간격만 조정하는 알고리즘 구현.
+- 사운드 로딩: 메트로놈 시작 시 사운드가 로드되지 않은 경우 자동으로 로딩하고 완료 후 재생.
 
 ## 상태 관리
 - React Query: 방 생성 뮤테이션 성공 시 `QUERY_KEYS.ROOMS` 무효화.
