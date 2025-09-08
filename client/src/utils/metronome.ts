@@ -16,6 +16,8 @@ export class Metronome {
   private onTempoChange: ((tempo: number) => void) | null = null;
   private onBeatsChange: ((beat: number) => void) | null = null;
   private onPlayStateChange: ((isPlaying: boolean) => void) | null = null;
+  private tapTimes: number[] = []; // Tab 버튼 누른 시간들을 저장
+  private maxTapTimes: number = 8; // 최대 저장할 탭 시간 수
 
   constructor(websocket: WebSocket) {
     const AudioContextCtor = ((window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext; }).AudioContext
@@ -162,8 +164,8 @@ export class Metronome {
     const elapsedTime = (Date.now() - this.startTime) / 1000; // 초 단위로 변환
     const elapsedBeats = elapsedTime / secondsPerBeat;
     
-    // 다음 비트 시간 계산
-    this.beatCount = Math.ceil(elapsedBeats) % this.beatsPerBar;
+    // 다음 비트 시간 계산 (자연스러운 박자 유지)
+    this.beatCount = Math.floor(elapsedBeats) % this.beatsPerBar;
     this.nextNoteTime = currentTime + (Math.ceil(elapsedBeats) - elapsedBeats) * secondsPerBeat;
     
     // 스케줄러 시작
@@ -277,5 +279,52 @@ export class Metronome {
   // 현재 재생 상태 반환
   public isActive(): boolean {
     return this.isPlaying;
+  }
+
+  // Tab 버튼으로 BPM 설정
+  public tapTempo(): number {
+    const now = Date.now();
+    this.tapTimes.push(now);
+    
+    // 최대 저장 개수 초과 시 오래된 것 제거
+    if (this.tapTimes.length > this.maxTapTimes) {
+      this.tapTimes.shift();
+    }
+    
+    // 최소 2번은 탭해야 BPM 계산 가능
+    if (this.tapTimes.length < 2) {
+      return this.tempo;
+    }
+    
+    // 최근 4번의 탭 간격으로 평균 BPM 계산
+    const recentTaps = this.tapTimes.slice(-4);
+    const intervals: number[] = [];
+    
+    for (let i = 1; i < recentTaps.length; i++) {
+      intervals.push(recentTaps[i] - recentTaps[i - 1]);
+    }
+    
+    // 평균 간격 계산 (밀리초)
+    const avgInterval = intervals.reduce((sum, interval) => sum + interval, 0) / intervals.length;
+    
+    // BPM 계산 (60000ms / 평균간격ms)
+    const calculatedBPM = Math.round(60000 / avgInterval);
+    
+    // BPM 범위 제한 (40-240)
+    const clampedBPM = Math.max(40, Math.min(240, calculatedBPM));
+    
+    console.log(`탭 BPM 계산: ${clampedBPM} (간격: ${avgInterval.toFixed(1)}ms)`);
+    
+    return clampedBPM;
+  }
+
+  // Tab 기록 초기화
+  public clearTapTimes(): void {
+    this.tapTimes = [];
+  }
+
+  // 현재 Tab 기록 개수 반환
+  public getTapCount(): number {
+    return this.tapTimes.length;
   }
 }

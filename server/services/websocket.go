@@ -245,9 +245,20 @@ func (s *WebSocketService) ChangeTempo(roomUuid string, tempo int) {
 		return
 	}
 	
-	// 메트로놈이 실행 중이면 시작 시간 재설정
+	// 메트로놈이 실행 중이면 자연스러운 템포 변경을 위해 시작 시간을 재계산
 	if state.IsPlaying {
-		state.StartTime = time.Now().UnixMilli()
+		// 현재 시간에서 기존 템포로 계산된 비트 위치를 유지하면서 새 템포로 시작 시간 재계산
+		now := time.Now().UnixMilli()
+		elapsedTime := now - state.StartTime
+		
+		// 기존 템포로 경과한 비트 수 계산
+		secondsPerBeatOld := 60.0 / float64(state.Tempo)
+		elapsedBeats := float64(elapsedTime) / 1000.0 / secondsPerBeatOld
+		
+		// 새 템포로 해당 비트 위치에 맞는 시작 시간 계산
+		secondsPerBeatNew := 60.0 / float64(tempo)
+		newStartTime := now - int64(elapsedBeats*secondsPerBeatNew*1000.0)
+		state.StartTime = newStartTime
 	}
 	
 	// 템포 업데이트
