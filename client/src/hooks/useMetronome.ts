@@ -56,6 +56,22 @@ export const useMetronome = (websocket: WebSocket | null) => {
     metronomeRef.current?.requestChangeBeats(newBeats);
   };
 
+  const tapTempo = () => {
+    if (metronomeRef.current) {
+      const newTempo = metronomeRef.current.tapTempo();
+      setTempo(newTempo);
+      metronomeRef.current.requestChangeTempo(newTempo);
+    }
+  };
+
+  const clearTapTimes = () => {
+    metronomeRef.current?.clearTapTimes();
+  };
+
+  const getTapCount = () => {
+    return metronomeRef.current?.getTapCount() || 0;
+  };
+
   return {
     isPlaying,
     tempo,
@@ -63,6 +79,9 @@ export const useMetronome = (websocket: WebSocket | null) => {
     startMetronome,
     stopMetronome,
     changeTempo,
-    changeBeats
+    changeBeats,
+    tapTempo,
+    clearTapTimes,
+    getTapCount
   };
 };

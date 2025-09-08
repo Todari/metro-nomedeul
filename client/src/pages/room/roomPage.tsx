@@ -12,7 +12,7 @@ export const RoomPage = () => {
   const { uuid } = useParams();
   const wsUrl = useMemo(() => `${CONFIG.WS_URL}/${uuid}?userId=client-${Math.random().toString(36).slice(2)}`, [uuid]);
   const { messages, socket } = useWebSocket(wsUrl);
-  const { isPlaying, tempo, beats, startMetronome, stopMetronome, changeTempo, changeBeats } = useMetronome(socket);
+  const { isPlaying, tempo, beats, startMetronome, stopMetronome, changeTempo, changeBeats, tapTempo, clearTapTimes, getTapCount } = useMetronome(socket);
 
   const [localTempo, setLocalTempo] = useState(tempo);
   const [localBeats, setLocalBeats] = useState(beats);
@@ -37,6 +37,14 @@ export const RoomPage = () => {
     stopMetronome();
   };
 
+  const handleTapTempo = () => {
+    tapTempo();
+  };
+
+  const handleClearTap = () => {
+    clearTapTimes();
+  };
+
   return (
     <div className={vstack({ gap: 6, alignItems: 'stretch' })}>
       <h1 className={css({ color: 'gray.900', fontSize: '2xl', fontWeight: 'bold', letterSpacing: '-0.02em' })}>메트로놈들</h1>
@@ -53,6 +61,9 @@ export const RoomPage = () => {
         onStop={handleStopMetronome}
         onTempoChange={(t) => { setLocalTempo(t); changeTempo(t); }}
         onBeatsChange={(b) => { setLocalBeats(b); changeBeats(b); }}
+        onTapTempo={handleTapTempo}
+        onClearTap={handleClearTap}
+        tapCount={getTapCount()}
       />
     </div>
   );
