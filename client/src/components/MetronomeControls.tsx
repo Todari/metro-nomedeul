@@ -1,0 +1,53 @@
+import { css } from "../../styled-system/css";
+
+interface MetronomeControlsProps {
+  isPlaying: boolean;
+  tempo: number;
+  beats: number;
+  onStart: () => void;
+  onStop: () => void;
+  onTempoChange: (tempo: number) => void;
+  onBeatsChange: (beats: number) => void;
+}
+
+export function MetronomeControls(props: MetronomeControlsProps) {
+  const { isPlaying, tempo, beats, onStart, onStop, onTempoChange, onBeatsChange } = props;
+
+  return (
+    <div className={css({ display: 'grid', gap: 4, p: 4, bg: 'white', rounded: 'xl', border: '1px solid', borderColor: 'gray.300', shadow: 'sm' })}>
+      <div className={css({ display: 'flex', gap: 2 })}>
+        {!isPlaying ? (
+          <button className={css({ px: 3, py: 2, rounded: 'md', bg: 'green.600', color: 'white', _hover: { bg: 'green.700' }, _active: { bg: 'green.800' } })} onClick={onStart}>시작</button>
+        ) : (
+          <button className={css({ px: 3, py: 2, rounded: 'md', bg: 'red.600', color: 'white', _hover: { bg: 'red.700' }, _active: { bg: 'red.800' } })} onClick={onStop}>정지</button>
+        )}
+      </div>
+      <div>
+        <label className={css({ fontWeight: 'medium', display: 'grid', gap: 2 })}>
+          BPM: {tempo}
+          <input
+            className={css({ w: 'full', accentColor: 'blue.600' })}
+            aria-label="BPM"
+            type="range"
+            min={40}
+            max={240}
+            value={tempo}
+            onChange={(e) => onTempoChange(Number(e.target.value))}
+          />
+        </label>
+      </div>
+      <div>
+        <label className={css({ fontWeight: 'medium', display: 'grid', gap: 2 })}>
+          박자:
+          <select className={css({ px: 2, py: 2, rounded: 'md', border: '1px solid', borderColor: 'gray.300', bg: 'white' })} aria-label="Beats" value={beats} onChange={(e) => onBeatsChange(Number(e.target.value))}>
+            {Array.from({ length: 6 }, (_, i) => i + 2).map((b) => (
+              <option key={b} value={b}>{b}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+    </div>
+  );
+}
+
+
