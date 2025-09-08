@@ -25,6 +25,8 @@ interface QrScannerProps {
 export function QrScanner({ onDetected, onError }: QrScannerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [unsupported, setUnsupported] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let stream: MediaStream | null = null;
@@ -33,21 +35,43 @@ export function QrScanner({ onDetected, onError }: QrScannerProps) {
 
     async function setup() {
       try {
+        setIsLoading(true);
+        setError(null);
+        
+        // 카메라 권한 확인
+        const permission = await navigator.permissions.query({ name: 'camera' as PermissionName });
+        if (permission.state === 'denied') {
+          throw new Error('카메라 권한이 거부되었습니다. 브라우저 설정에서 카메라 권한을 허용해주세요.');
+        }
+
         const BarcodeDetectorCtor = window.BarcodeDetector as (typeof BarcodeDetector) | undefined;
         if (!BarcodeDetectorCtor) {
           setUnsupported(true);
+          setIsLoading(false);
           return;
         }
+        
         detector = new BarcodeDetectorCtor({ formats: ['qr_code'] });
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        
+        // 카메라 스트림 요청 (더 구체적인 옵션)
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: 'environment',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          } 
+        });
+        
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           await videoRef.current.play();
+          setIsLoading(false);
         }
+        
         const loop = async () => {
-          if (!videoRef.current) return;
+          if (!videoRef.current || !detector) return;
           try {
-            const bitmaps = await detector!.detect(videoRef.current);
+            const bitmaps = await detector.detect(videoRef.current);
             if (bitmaps && bitmaps.length > 0) {
               onDetected(bitmaps[0].rawValue);
               return; // 일단 1회 감지 후 종료
@@ -59,8 +83,11 @@ export function QrScanner({ onDetected, onError }: QrScannerProps) {
         };
         rafId = requestAnimationFrame(loop);
       } catch (err) {
+        console.error('QR 스캐너 설정 실패:', err);
+        setError(err instanceof Error ? err.message : '카메라 접근에 실패했습니다.');
         onError?.(err);
         setUnsupported(true);
+        setIsLoading(false);
       }
     }
 
@@ -73,21 +100,142 @@ export function QrScanner({ onDetected, onError }: QrScannerProps) {
 
   if (unsupported) {
     return (
-      <div className={css({ p: 4, bg: 'yellow.300', color: 'yellow.800', rounded: 'md', border: '1px solid', borderColor: 'yellow.600' })}>
-        <p className={css({ mb: 2 })}>카메라 접근이 불가하거나 브라우저가 QR 감지를 지원하지 않습니다.</p>
-        <input
-          className={css({ px: 3, py: 2, rounded: 'md', border: '1px solid', borderColor: 'gray.300', bg: 'white' })}
-          type="file"
-          accept="image/*"
-          onChange={() => onError?.(new Error('이미지 업로드 기반 QR 스캔은 미구현'))}
-        />
+      <div className={css({ p: 4, bg: 'red.50', color: 'red.800', rounded: 'md', border: '1px solid', borderColor: 'red.200' })}>
+        <p className={css({ mb: 2, fontWeight: 'medium' })}>QR 스캐너를 사용할 수 없습니다</p>
+        {error && (
+          <p className={css({ mb: 3, fontSize: 'sm', color: 'red.600' })}>{error}</p>
+        )}
+        <p className={css({ mb: 3, fontSize: 'sm' })}>
+          브라우저가 QR 감지를 지원하지 않거나 카메라 접근이 불가합니다.
+        </p>
+        <div className={css({ p: 3, bg: 'white', rounded: 'md', border: '1px solid', borderColor: 'gray.200' })}>
+          <p className={css({ mb: 2, fontSize: 'sm', fontWeight: 'medium' })}>대안: 방 ID 직접 입력</p>
+          <input
+            className={css({ 
+              w: 'full', 
+              px: 3, 
+              py: 2, 
+              rounded: 'md', 
+              border: '1px solid', 
+              borderColor: 'gray.300', 
+              bg: 'white',
+              fontSize: 'sm'
+            })}
+            type="text"
+            placeholder="8자리 방 ID를 입력하세요 (예: AbC123Xy)"
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                const value = (e.target as HTMLInputElement).value.trim();
+                if (value.length === 8) {
+                  onDetected(value);
+                }
+              }
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className={css({ p: 8, textAlign: 'center' })}>
+        <div className={css({ mb: 4, fontSize: 'lg', color: 'gray.600' })}>카메라를 시작하는 중...</div>
+        <div className={css({ 
+          w: '8', 
+          h: '8', 
+          border: '2px solid', 
+          borderColor: 'blue.200', 
+          borderTopColor: 'blue.600',
+          rounded: 'full',
+          animation: 'spin 1s linear infinite',
+          mx: 'auto'
+        })} />
       </div>
     );
   }
 
   return (
-    <div>
-      <video className={css({ w: 'full', maxW: '480px', rounded: 'lg', border: '1px solid', borderColor: 'gray.4', shadow: 'sm' })} ref={videoRef} playsInline />
+    <div className={css({ position: 'relative' })}>
+      <video 
+        className={css({ 
+          w: 'full', 
+          maxW: '480px', 
+          rounded: 'lg', 
+          border: '2px solid', 
+          borderColor: 'blue.300', 
+          shadow: 'lg' 
+        })} 
+        ref={videoRef} 
+        playsInline 
+        autoPlay
+        muted
+      />
+      <div className={css({ 
+        position: 'absolute', 
+        top: '50%', 
+        left: '50%', 
+        transform: 'translate(-50%, -50%)',
+        w: '200px',
+        h: '200px',
+        border: '2px solid',
+        borderColor: 'blue.500',
+        rounded: 'lg',
+        pointerEvents: 'none'
+      })}>
+        <div className={css({
+          position: 'absolute',
+          top: '-2px',
+          left: '-2px',
+          w: '20px',
+          h: '20px',
+          borderTop: '4px solid',
+          borderLeft: '4px solid',
+          borderColor: 'blue.500',
+          rounded: 'tl-lg'
+        })} />
+        <div className={css({
+          position: 'absolute',
+          top: '-2px',
+          right: '-2px',
+          w: '20px',
+          h: '20px',
+          borderTop: '4px solid',
+          borderRight: '4px solid',
+          borderColor: 'blue.500',
+          rounded: 'tr-lg'
+        })} />
+        <div className={css({
+          position: 'absolute',
+          bottom: '-2px',
+          left: '-2px',
+          w: '20px',
+          h: '20px',
+          borderBottom: '4px solid',
+          borderLeft: '4px solid',
+          borderColor: 'blue.500',
+          rounded: 'bl-lg'
+        })} />
+        <div className={css({
+          position: 'absolute',
+          bottom: '-2px',
+          right: '-2px',
+          w: '20px',
+          h: '20px',
+          borderBottom: '4px solid',
+          borderRight: '4px solid',
+          borderColor: 'blue.500',
+          rounded: 'br-lg'
+        })} />
+      </div>
+      <div className={css({ 
+        mt: 3, 
+        textAlign: 'center', 
+        color: 'gray.600', 
+        fontSize: 'sm' 
+      })}>
+        QR 코드를 카메라에 비춰주세요
+      </div>
     </div>
   );
 }
