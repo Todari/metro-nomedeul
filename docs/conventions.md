@@ -22,6 +22,7 @@
 ## 파일 구조
 - `apis/`, `components/`, `hooks/`, `pages/`, `utils/`, `types/`
 - 페이지 전용 UI는 해당 페이지 폴더 또는 `components/`로 승격
+- 재사용 가능한 UI 컴포넌트는 `components/`에 위치 (ScrollPicker, HorizontalScrollPicker 등)
 
 ## 린팅
 - `npm run lint`

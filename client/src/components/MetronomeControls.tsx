@@ -1,4 +1,6 @@
 import { css } from "../../styled-system/css";
+import { ScrollPicker } from "./ScrollPicker";
+import { HorizontalScrollPicker } from "./HorizontalScrollPicker";
 
 interface MetronomeControlsProps {
   isPlaying: boolean;
@@ -60,25 +62,42 @@ export function MetronomeControls(props: MetronomeControlsProps) {
       <div>
         <label className={css({ fontWeight: 'medium', display: 'grid', gap: 2 })}>
           BPM: {tempo}
-          <input
-            className={css({ w: 'full', accentColor: 'blue.600' })}
-            aria-label="BPM"
-            type="range"
+          <ScrollPicker
             min={40}
             max={240}
             value={tempo}
-            onChange={(e) => onTempoChange(Number(e.target.value))}
+            onChange={onTempoChange}
+            step={1}
+            height={280}
+            itemHeight={40}
+            className={css({ 
+              border: '1px solid', 
+              borderColor: 'gray.200', 
+              borderRadius: 'md',
+              bg: 'gray.50'
+            })}
           />
         </label>
       </div>
       <div>
         <label className={css({ fontWeight: 'medium', display: 'grid', gap: 2 })}>
-          박자:
-          <select className={css({ px: 2, py: 2, rounded: 'md', border: '1px solid', borderColor: 'gray.300', bg: 'white' })} aria-label="Beats" value={beats} onChange={(e) => onBeatsChange(Number(e.target.value))}>
-            {Array.from({ length: 6 }, (_, i) => i + 2).map((b) => (
-              <option key={b} value={b}>{b}</option>
-            ))}
-          </select>
+          박자: {beats}
+          <HorizontalScrollPicker
+            min={2}
+            max={8}
+            value={beats}
+            onChange={onBeatsChange}
+            step={1}
+            width={280}
+            itemWidth={40}
+            className={css({ 
+              border: '1px solid', 
+              borderColor: 'gray.200', 
+              borderRadius: 'md',
+              bg: 'gray.50',
+              w: 'full'
+            })}
+          />
         </label>
       </div>
     </div>

@@ -1,7 +1,7 @@
 export class Metronome {
   private audioContext: AudioContext;
   private isPlaying: boolean = false;
-  private tempo: number = 128;
+  private tempo: number = 120;
   private startTime: number = 0;
   private nextNoteTime: number = 0;
   private noteLength: number = 0.05; // 소리 길이 (초)

@@ -4,7 +4,7 @@ import { Metronome } from '../utils/metronome';
 export const useMetronome = (websocket: WebSocket | null) => {
   const metronomeRef = useRef<Metronome | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [tempo, setTempo] = useState(128);
+  const [tempo, setTempo] = useState(120);
   const [beats, setBeats] = useState(4);
 
   useEffect(() => {

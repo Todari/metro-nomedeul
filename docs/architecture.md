@@ -12,7 +12,9 @@ App
 │  ├─ hooks/useWebSocket.ts (WS 연결/재연결, send)
 │  ├─ hooks/useMetronome.ts (Metronome 클래스와 상태 바인딩)
 │  ├─ components/QrDisplay.tsx
-│  └─ components/MetronomeControls.tsx
+│  ├─ components/MetronomeControls.tsx
+│  ├─ components/ScrollPicker.tsx (BPM 선택 UI - 세로)
+│  └─ components/HorizontalScrollPicker.tsx (박자 선택 UI - 가로)
 ├─ apis/room.ts (POST /room)
 ├─ utils/http.ts (axios 인스턴스)
 └─ utils/metronome.ts (오디오 스케줄링, 사운드, 동기화)
@@ -62,6 +64,13 @@ server/
 - Tab BPM 기능: 사용자 탭 간격을 측정하여 평균 BPM 계산 (최근 4번 탭 기준).
 - 자연스러운 BPM 변경: 박자 위치를 유지하면서 간격만 조정하는 알고리즘 구현.
 - 사운드 로딩: 메트로놈 시작 시 사운드가 로드되지 않은 경우 자동으로 로딩하고 완료 후 재생.
+
+## UI 컴포넌트 설계
+- **ScrollPicker**: 세로 스크롤 BPM 선택 (40-240, 7개 표시)
+- **HorizontalScrollPicker**: 가로 스크롤 박자 선택 (2-8, 전체 너비)
+- **공통 기능**: 드래그, 터치, 휠 지원, easeOutCubic 애니메이션
+- **반응형**: 컨테이너 크기에 따른 동적 중앙 정렬
+- **실시간 동기화**: WebSocket을 통한 다중 클라이언트 상태 동기화
 
 ## 상태 관리
 - React Query: 방 생성 뮤테이션 성공 시 `QUERY_KEYS.ROOMS` 무효화.
