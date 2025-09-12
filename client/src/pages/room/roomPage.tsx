@@ -5,8 +5,9 @@ import { useParams } from "react-router-dom";
 import { useWebSocket } from "../../hooks/useWebSocket";
 import { CONFIG } from "../../apis/config";
 import { useMetronome } from "../../hooks/useMetronome";
-import { QrDisplay } from "../../components/QrDisplay";
 import { MetronomeControls } from "../../components/MetronomeControls";
+import { BeatCard } from "../../components/BeatCard";
+import { Header } from "../../components/Header";
 
 export const RoomPage = () => {
   const { uuid } = useParams();
@@ -16,6 +17,7 @@ export const RoomPage = () => {
 
   const [localTempo, setLocalTempo] = useState(tempo);
   const [localBeats, setLocalBeats] = useState(beats);
+  const [currentBeat, setCurrentBeat] = useState(1);
 
   useEffect(() => {
     console.log(messages);
@@ -28,6 +30,25 @@ export const RoomPage = () => {
   useEffect(() => {
     setLocalBeats(beats);
   }, [beats]);
+
+  // 박자 카운터 시뮬레이션 (실제로는 서버에서 받아와야 함)
+  useEffect(() => {
+    if (!isPlaying) {
+      setCurrentBeat(1);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setCurrentBeat(prev => {
+        if (prev >= localBeats) {
+          return 1; // 다음 마디로
+        }
+        return prev + 1;
+      });
+    }, (60 / localTempo) * 1000); // BPM에 따른 간격
+
+    return () => clearInterval(interval);
+  }, [isPlaying, localTempo, localBeats]);
   
   const handleStartMetronome = () => {
     startMetronome();
@@ -46,25 +67,40 @@ export const RoomPage = () => {
   };
 
   return (
-    <div className={vstack({ gap: 6, alignItems: 'stretch' })}>
-      <h1 className={css({ color: 'gray.900', fontSize: '2xl', fontWeight: 'bold', letterSpacing: '-0.02em' })}>메트로놈들</h1>
-      {uuid && (
-        <div className={css({ p: 4, bg: 'white', rounded: 'xl', border: '1px solid', borderColor: 'gray.300', shadow: 'sm' })}>
-          <QrDisplay uuid={uuid} />
+    <div className={vstack({alignItems: 'stretch', gap: 0, h: '100dvh' })}>
+      <Header />
+      <div className={vstack({ gap: 4, alignItems: 'stretch', maxW: '4xl', h: 'full' })}>
+        
+        {/* 박자 카드 */}
+        <div className={css({ display: 'flex', justifyContent: 'center', alignItems: 'center', w: 'full', h: 'full' })}>
+          <BeatCard 
+            currentBeat={currentBeat} 
+            isPlaying={isPlaying}
+            className={css({ w: 'full', h: 'full' })}
+          />
         </div>
-      )}
-      <MetronomeControls
-        isPlaying={isPlaying}
-        tempo={localTempo}
-        beats={localBeats}
-        onStart={handleStartMetronome}
-        onStop={handleStopMetronome}
-        onTempoChange={(t) => { setLocalTempo(t); changeTempo(t); }}
-        onBeatsChange={(b) => { setLocalBeats(b); changeBeats(b); }}
-        onTapTempo={handleTapTempo}
-        onClearTap={handleClearTap}
-        tapCount={getTapCount()}
-      />
+
+        {/* QR 코드 */}
+        {/* {uuid && (
+          <div className={css({ p: 6, bg: 'neutral.800', rounded: '2xl', border: '1px solid', borderColor: 'neutral.700', shadow: 'lg' })}>
+            <QrDisplay uuid={uuid} />
+          </div>
+        )} */}
+
+        {/* 메트로놈 컨트롤 */}
+        <MetronomeControls
+          isPlaying={isPlaying}
+          tempo={localTempo}
+          beats={localBeats}
+          onStart={handleStartMetronome}
+          onStop={handleStopMetronome}
+          onTempoChange={(t) => { setLocalTempo(t); changeTempo(t); }}
+          onBeatsChange={(b) => { setLocalBeats(b); changeBeats(b); }}
+          onTapTempo={handleTapTempo}
+          onClearTap={handleClearTap}
+          tapCount={getTapCount()}
+        />
+      </div>
     </div>
   );
 };

@@ -17,14 +17,14 @@ createRoot(document.getElementById('root')!).render(
           css({
             minH: '100dvh',
             bgGradient: 'to-b',
-            gradientFrom: 'gray.50',
-            gradientTo: 'gray.200',
-            color: 'gray.900',
+            gradientFrom: 'neutral.900',
+            gradientTo: 'neutral.800',
+            color: 'white',
             fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Noto Sans KR, Apple SD Gothic Neo, sans-serif'
           })
         }
       >
-        <div className={container({ px: { base: 4, md: 8 }, py: 8, maxW: '720px' })}>
+        <div className={container({ maxW: '720px' })}>
           <RouterProvider router={router} />
         </div>
       </div>

@@ -230,8 +230,8 @@ export function HorizontalScrollPicker({
           bottom: '0',
           width: `${itemWidth}px`,
           transform: 'translateX(-50%)',
-          backgroundColor: 'blue.500/16',
-          borderRadius: 'md',
+          backgroundColor: 'orange.500/20',
+          borderRadius: 'lg',
           pointerEvents: 'none',
           zIndex: 2
         })}
@@ -265,7 +265,7 @@ export function HorizontalScrollPicker({
                 justifyContent: 'center',
                 fontSize: isSelected ? 'lg' : 'md',
                 fontWeight: isSelected ? 'bold' : 'normal',
-                color: isSelected ? 'blue.600' : 'gray.700',
+                color: isSelected ? 'orange.400' : 'neutral.300',
                 opacity,
                 transform: `scale(${scale})`,
                 transition: 'all 0.2s ease-out',

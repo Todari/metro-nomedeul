@@ -11,8 +11,10 @@ App
 ├─ pages/room/roomPage.tsx
 │  ├─ hooks/useWebSocket.ts (WS 연결/재연결, send)
 │  ├─ hooks/useMetronome.ts (Metronome 클래스와 상태 바인딩)
-│  ├─ components/QrDisplay.tsx
-│  ├─ components/MetronomeControls.tsx
+│  ├─ components/Header.tsx (상단 헤더)
+│  ├─ components/QrDisplay.tsx (다크모드 QR 표시, 현재 주석 처리)
+│  ├─ components/MetronomeControls.tsx (다크모드 컨트롤)
+│  ├─ components/BeatCard.tsx (전체 화면 박자 시각화)
 │  ├─ components/ScrollPicker.tsx (BPM 선택 UI - 세로)
 │  └─ components/HorizontalScrollPicker.tsx (박자 선택 UI - 가로)
 ├─ apis/room.ts (POST /room)
@@ -66,11 +68,17 @@ server/
 - 사운드 로딩: 메트로놈 시작 시 사운드가 로드되지 않은 경우 자동으로 로딩하고 완료 후 재생.
 
 ## UI 컴포넌트 설계
-- **ScrollPicker**: 세로 스크롤 BPM 선택 (40-240, 7개 표시)
-- **HorizontalScrollPicker**: 가로 스크롤 박자 선택 (2-8, 전체 너비)
+- **Header**: 상단 고정 헤더 컴포넌트
+- **BeatCard**: 전체 화면 박자 시각화 (w: full, h: full, Flexbox 중앙 정렬)
+- **ScrollPicker**: 세로 스크롤 BPM 선택 (40-240, 7개 표시, 다크모드)
+- **HorizontalScrollPicker**: 가로 스크롤 박자 선택 (2-8, 전체 너비, 다크모드)
+- **MetronomeControls**: 다크모드 메트로놈 컨트롤 (오렌지 primary, neutral secondary)
+- **QrDisplay**: 다크모드 QR 코드 표시 (현재 주석 처리, 추후 복원 예정)
 - **공통 기능**: 드래그, 터치, 휠 지원, easeOutCubic 애니메이션
 - **반응형**: 컨테이너 크기에 따른 동적 중앙 정렬
 - **실시간 동기화**: WebSocket을 통한 다중 클라이언트 상태 동기화
+- **다크모드**: 일관된 색상 시스템 (오렌지 primary, neutral secondary)
+- **레이아웃**: 전체 화면 높이 활용 (100dvh), Flexbox 기반 중앙 정렬
 
 ## 상태 관리
 - React Query: 방 생성 뮤테이션 성공 시 `QUERY_KEYS.ROOMS` 무효화.

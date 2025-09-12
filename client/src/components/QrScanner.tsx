@@ -108,7 +108,7 @@ export function QrScanner({ onDetected, onError }: QrScannerProps) {
         <p className={css({ mb: 3, fontSize: 'sm' })}>
           브라우저가 QR 감지를 지원하지 않거나 카메라 접근이 불가합니다.
         </p>
-        <div className={css({ p: 3, bg: 'white', rounded: 'md', border: '1px solid', borderColor: 'gray.200' })}>
+        <div className={css({ p: 3, bg: 'white', rounded: 'md', border: '1px solid', borderColor: 'neutral.200' })}>
           <p className={css({ mb: 2, fontSize: 'sm', fontWeight: 'medium' })}>대안: 방 ID 직접 입력</p>
           <input
             className={css({ 
@@ -117,7 +117,7 @@ export function QrScanner({ onDetected, onError }: QrScannerProps) {
               py: 2, 
               rounded: 'md', 
               border: '1px solid', 
-              borderColor: 'gray.300', 
+              borderColor: 'neutral.300', 
               bg: 'white',
               fontSize: 'sm'
             })}
@@ -140,7 +140,7 @@ export function QrScanner({ onDetected, onError }: QrScannerProps) {
   if (isLoading) {
     return (
       <div className={css({ p: 8, textAlign: 'center' })}>
-        <div className={css({ mb: 4, fontSize: 'lg', color: 'gray.600' })}>카메라를 시작하는 중...</div>
+        <div className={css({ mb: 4, fontSize: 'lg', color: 'neutral.600' })}>카메라를 시작하는 중...</div>
         <div className={css({ 
           w: '8', 
           h: '8', 
@@ -231,7 +231,7 @@ export function QrScanner({ onDetected, onError }: QrScannerProps) {
       <div className={css({ 
         mt: 3, 
         textAlign: 'center', 
-        color: 'gray.600', 
+        color: 'neutral.600', 
         fontSize: 'sm' 
       })}>
         QR 코드를 카메라에 비춰주세요

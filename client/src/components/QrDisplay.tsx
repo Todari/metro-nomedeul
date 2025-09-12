@@ -25,13 +25,13 @@ export function QrDisplay({ uuid }: QrDisplayProps) {
   }, [joinUrl]);
 
   return (
-    <div className={css({ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 })}>
+    <div className={css({ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 })}>
       {dataUrl ? (
-        <img className={css({ rounded: 'lg', border: '1px solid', borderColor: 'gray.300', shadow: 'sm' })} src={dataUrl} width={240} height={240} alt="방 입장 QR" />
+        <img className={css({ rounded: 'xl', border: '2px solid', borderColor: 'neutral.600', shadow: 'lg' })} src={dataUrl} width={240} height={240} alt="방 입장 QR" />
       ) : (
-        <div className={css({ w: '240px', h: '240px', rounded: 'lg', border: '1px solid', borderColor: 'gray.300', bg: 'gray.100' })} />
+        <div className={css({ w: '240px', h: '240px', rounded: 'xl', border: '2px solid', borderColor: 'neutral.600', bg: 'neutral.700' })} />
       )}
-      <div className={css({ fontSize: 'xs', wordBreak: 'break-all', color: 'gray.700' })}>{joinUrl}</div>
+      <div className={css({ fontSize: 'sm', wordBreak: 'break-all', color: 'neutral.300', textAlign: 'center' })}>{joinUrl}</div>
     </div>
   );
 }

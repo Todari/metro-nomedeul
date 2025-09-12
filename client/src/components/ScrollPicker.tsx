@@ -225,8 +225,8 @@ export function ScrollPicker({
           right: '0',
           height: `${itemHeight}px`,
           transform: 'translateY(-50%)',
-          backgroundColor: 'blue.500/16',
-          borderRadius: 'md',
+          backgroundColor: 'orange.500/20',
+          borderRadius: 'lg',
           pointerEvents: 'none',
           zIndex: 2
         })}
@@ -258,7 +258,7 @@ export function ScrollPicker({
                 justifyContent: 'center',
                 fontSize: isSelected ? 'xl' : 'lg',
                 fontWeight: isSelected ? 'bold' : 'normal',
-                color: isSelected ? 'blue.600' : 'gray.700',
+                color: isSelected ? 'orange.400' : 'neutral.300',
                 opacity,
                 transform: `scale(${scale})`,
                 transition: 'all 0.2s ease-out'

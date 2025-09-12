@@ -19,23 +19,24 @@ export function MetronomeControls(props: MetronomeControlsProps) {
   const { isPlaying, tempo, beats, onStart, onStop, onTempoChange, onBeatsChange, onTapTempo, onClearTap, tapCount } = props;
 
   return (
-    <div className={css({ display: 'grid', gap: 4, p: 4, bg: 'white', rounded: 'xl', border: '1px solid', borderColor: 'gray.300', shadow: 'sm' })}>
-      <div className={css({ display: 'flex', gap: 2, flexWrap: 'wrap' })}>
+    <div className={css({ display: 'grid', gap: 6, p: 6, bg: 'neutral.800', rounded: 'xl', border: '1px solid', borderColor: 'neutral.700', shadow: 'lg' })}>
+      <div className={css({ display: 'flex', gap: 3, flexWrap: 'wrap' })}>
         {!isPlaying ? (
-          <button className={css({ px: 3, py: 2, rounded: 'md', bg: 'green.600', color: 'white', _hover: { bg: 'green.700' }, _active: { bg: 'green.800' } })} onClick={onStart}>시작</button>
+          <button className={css({ px: 4, py: 3, rounded: 'lg', bg: 'orange.600', color: 'white', _hover: { bg: 'orange.700' }, _active: { bg: 'orange.800' }, fontWeight: 'medium' })} onClick={onStart}>시작</button>
         ) : (
-          <button className={css({ px: 3, py: 2, rounded: 'md', bg: 'red.600', color: 'white', _hover: { bg: 'red.700' }, _active: { bg: 'red.800' } })} onClick={onStop}>정지</button>
+          <button className={css({ px: 4, py: 3, rounded: 'lg', bg: 'red.600', color: 'white', _hover: { bg: 'red.700' }, _active: { bg: 'red.800' }, fontWeight: 'medium' })} onClick={onStop}>정지</button>
         )}
         <button 
           className={css({ 
-            px: 3, 
-            py: 2, 
-            rounded: 'md', 
-            bg: 'blue.600', 
+            px: 4, 
+            py: 3, 
+            rounded: 'lg', 
+            bg: 'neutral.600', 
             color: 'white', 
-            _hover: { bg: 'blue.700' }, 
-            _active: { bg: 'blue.800' },
-            fontSize: 'sm'
+            _hover: { bg: 'neutral.700' }, 
+            _active: { bg: 'neutral.800' },
+            fontSize: 'sm',
+            fontWeight: 'medium'
           })} 
           onClick={onTapTempo}
         >
@@ -44,14 +45,15 @@ export function MetronomeControls(props: MetronomeControlsProps) {
         {tapCount > 0 && (
           <button 
             className={css({ 
-              px: 2, 
-              py: 2, 
-              rounded: 'md', 
-              bg: 'gray.500', 
+              px: 3, 
+              py: 3, 
+              rounded: 'lg', 
+              bg: 'neutral.500', 
               color: 'white', 
-              _hover: { bg: 'gray.600' }, 
-              _active: { bg: 'gray.700' },
-              fontSize: 'xs'
+              _hover: { bg: 'neutral.600' }, 
+              _active: { bg: 'neutral.700' },
+              fontSize: 'xs',
+              fontWeight: 'medium'
             })} 
             onClick={onClearTap}
           >
@@ -60,27 +62,7 @@ export function MetronomeControls(props: MetronomeControlsProps) {
         )}
       </div>
       <div>
-        <label className={css({ fontWeight: 'medium', display: 'grid', gap: 2 })}>
-          BPM: {tempo}
-          <ScrollPicker
-            min={40}
-            max={240}
-            value={tempo}
-            onChange={onTempoChange}
-            step={1}
-            height={280}
-            itemHeight={40}
-            className={css({ 
-              border: '1px solid', 
-              borderColor: 'gray.200', 
-              borderRadius: 'md',
-              bg: 'gray.50'
-            })}
-          />
-        </label>
-      </div>
-      <div>
-        <label className={css({ fontWeight: 'medium', display: 'grid', gap: 2 })}>
+        <label className={css({ fontWeight: 'medium', display: 'grid', gap: 3, color: 'white' })}>
           박자: {beats}
           <HorizontalScrollPicker
             min={2}
@@ -92,10 +74,30 @@ export function MetronomeControls(props: MetronomeControlsProps) {
             itemWidth={40}
             className={css({ 
               border: '1px solid', 
-              borderColor: 'gray.200', 
-              borderRadius: 'md',
-              bg: 'gray.50',
+              borderColor: 'neutral.600', 
+              borderRadius: 'lg',
+              bg: 'neutral.700',
               w: 'full'
+            })}
+          />
+        </label>
+      </div>
+      <div>
+        <label className={css({ fontWeight: 'medium', display: 'grid', gap: 3, color: 'white' })}>
+          BPM: {tempo}
+          <ScrollPicker
+            min={40}
+            max={240}
+            value={tempo}
+            onChange={onTempoChange}
+            step={1}
+            height={280}
+            itemHeight={40}
+            className={css({ 
+              border: '1px solid', 
+              borderColor: 'neutral.600', 
+              borderRadius: 'lg',
+              bg: 'neutral.700'
             })}
           />
         </label>
