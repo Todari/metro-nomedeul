@@ -43,7 +43,7 @@ export function MetronomeControls(props: MetronomeControlsProps) {
           Tab ({tapCount})
         </button>
         {tapCount > 0 && (
-          <button 
+          <button
             className={css({ 
               px: 3, 
               py: 3, 

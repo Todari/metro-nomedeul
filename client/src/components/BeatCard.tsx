@@ -49,7 +49,7 @@ export function BeatCard({ currentBeat, isPlaying, className }: BeatCardProps) {
       className={css({
         p: 8,
         w:'full',
-        h:'full',
+        aspectRatio: '1/1',
         rounded: '2xl',
         textAlign: 'center',
         display: 'flex',
