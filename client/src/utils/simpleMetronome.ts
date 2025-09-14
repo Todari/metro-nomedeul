@@ -49,8 +49,7 @@ export class Metronome {
 
     try {
       // AudioContext 생성
-      const AudioContextCtor = (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }).AudioContext
-        ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      const AudioContextCtor = (window as any).AudioContext || (window as any).webkitAudioContext;
       if (!AudioContextCtor) {
         throw new Error('AudioContext not supported');
       }
@@ -58,7 +57,7 @@ export class Metronome {
       this.audioContext = new AudioContextCtor();
       
       // AudioContext가 suspended 상태인 경우 resume
-      if (this.audioContext && this.audioContext.state === 'suspended') {
+      if (this.audioContext.state === 'suspended') {
         await this.audioContext.resume();
       }
 
@@ -66,10 +65,10 @@ export class Metronome {
       await this.loadSounds();
       
       this.isAudioReady = true;
-      console.log('Metronome 초기화 완료');
+      console.log('SimpleMetronome 초기화 완료');
       return true;
     } catch (error) {
-      console.error('Metronome 초기화 실패:', error);
+      console.error('SimpleMetronome 초기화 실패:', error);
       return false;
     } finally {
       this.isInitializing = false;
@@ -115,27 +114,19 @@ export class Metronome {
   }
 
   // 서버 상태 처리
-  private handleServerState(state: {
-    type: string;
-    isPlaying: boolean;
-    tempo: number;
-    beats: number;
-    startTime: number;
-    serverTime: number;
-    roomUuid: string;
-  }) {
+  private handleServerState(state: any) {
     console.log('서버 상태 수신:', state);
 
     // 템포 업데이트
     if (state.tempo && state.tempo !== this.tempo) {
       this.tempo = state.tempo;
-      this.onTempoChange?.(state.tempo);
+      this.onTempoChange?.(this.tempo);
     }
 
     // 박자 업데이트
     if (state.beats && state.beats !== this.beatsPerBar) {
       this.beatsPerBar = state.beats;
-      this.onBeatsChange?.(state.beats);
+      this.onBeatsChange?.(this.beatsPerBar);
     }
 
     // 재생 상태 변경

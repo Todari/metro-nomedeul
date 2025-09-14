@@ -13,7 +13,7 @@ App
 │  ├─ hooks/useMetronome.ts (Metronome 클래스와 상태 바인딩)
 │  ├─ components/Header.tsx (상단 헤더)
 │  ├─ components/QrDisplay.tsx (다크모드 QR 표시, 현재 주석 처리)
-│  ├─ components/BasicMetronomeControls.tsx (기본 컨트롤 - 시작/정지, 상태 표시)
+│  ├─ components/MetronomeControls.tsx (메트로놈 컨트롤 - 시작/정지, 상태 표시, 오디오 초기화)
 │  ├─ components/SettingsBottomSheet.tsx (설정 바텀시트 - BPM/박자 조절)
 │  ├─ components/BeatCard.tsx (전체 화면 박자 시각화)
 │  ├─ components/ScrollPicker.tsx (BPM 선택 UI - 세로)
@@ -73,7 +73,7 @@ server/
 - **BeatCard**: 전체 화면 박자 시각화 (w: full, h: full, Flexbox 중앙 정렬)
 - **ScrollPicker**: 세로 스크롤 BPM 선택 (40-240, 7개 표시, 다크모드)
 - **HorizontalScrollPicker**: 가로 스크롤 박자 선택 (2-8, 전체 너비, 다크모드)
-- **BasicMetronomeControls**: 기본 메트로놈 컨트롤 (시작/정지, 현재 상태 표시, 설정 버튼)
+- **MetronomeControls**: 메트로놈 컨트롤 (시작/정지, 현재 상태 표시, 오디오 초기화, 설정 버튼)
 - **SettingsBottomSheet**: 설정 바텀시트 (BPM/박자 스크롤, 탭 템포 기능)
 - **QrDisplay**: 다크모드 QR 코드 표시 (현재 주석 처리, 추후 복원 예정)
 - **공통 기능**: 드래그, 터치, 휠 지원, easeOutCubic 애니메이션

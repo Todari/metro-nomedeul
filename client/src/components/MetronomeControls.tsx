@@ -1,7 +1,7 @@
 import { css } from "../../styled-system/css";
 import { Button } from "./Button";
 
-interface BasicMetronomeControlsProps {
+interface MetronomeControlsProps {
   isPlaying: boolean;
   tempo: number;
   beats: number;
@@ -13,7 +13,7 @@ interface BasicMetronomeControlsProps {
   onInitializeAudio: () => void;
 }
 
-export function BasicMetronomeControls(props: BasicMetronomeControlsProps) {
+export function MetronomeControls(props: MetronomeControlsProps) {
   const { isPlaying, tempo, beats, isAudioReady, isInitializing, onStart, onStop, onSettingsClick, onInitializeAudio } = props;
 
   return (

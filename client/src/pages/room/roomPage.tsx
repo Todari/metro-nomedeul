@@ -5,7 +5,7 @@ import { useParams } from "react-router-dom";
 import { useWebSocket } from "../../hooks/useWebSocket";
 import { CONFIG } from "../../apis/config";
 import { useMetronome } from "../../hooks/useMetronome";
-import { BasicMetronomeControls } from "../../components/BasicMetronomeControls";
+import { MetronomeControls } from "../../components/MetronomeControls";
 import { SettingsBottomSheet } from "../../components/SettingsBottomSheet";
 import { BeatCard } from "../../components/BeatCard";
 import { Header } from "../../components/Header";
@@ -14,7 +14,21 @@ export const RoomPage = () => {
   const { uuid } = useParams();
   const wsUrl = useMemo(() => `${CONFIG.WS_URL}/${uuid}?userId=client-${Math.random().toString(36).slice(2)}`, [uuid]);
   const { messages, socket } = useWebSocket(wsUrl);
-  const { isPlaying, tempo, beats, startMetronome, stopMetronome, changeTempo, changeBeats, tapTempo, clearTapTimes, getTapCount } = useMetronome(socket);
+  const { 
+    isPlaying, 
+    tempo, 
+    beats, 
+    isAudioReady, 
+    isInitializing,
+    startMetronome, 
+    stopMetronome, 
+    changeTempo, 
+    changeBeats, 
+    tapTempo, 
+    clearTapTimes, 
+    getTapCount,
+    initializeAudio
+  } = useMetronome(socket);
 
   const [localTempo, setLocalTempo] = useState(tempo);
   const [localBeats, setLocalBeats] = useState(beats);
@@ -97,13 +111,16 @@ export const RoomPage = () => {
         )} */}
 
         {/* 메트로놈 컨트롤 */}
-        <BasicMetronomeControls
+        <MetronomeControls
           isPlaying={isPlaying}
           tempo={localTempo}
           beats={localBeats}
+          isAudioReady={isAudioReady}
+          isInitializing={isInitializing}
           onStart={handleStartMetronome}
           onStop={handleStopMetronome}
           onSettingsClick={handleSettingsClick}
+          onInitializeAudio={initializeAudio}
         />
 
         {/* 설정 바텀시트 */}
