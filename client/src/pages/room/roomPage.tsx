@@ -5,7 +5,8 @@ import { useParams } from "react-router-dom";
 import { useWebSocket } from "../../hooks/useWebSocket";
 import { CONFIG } from "../../apis/config";
 import { useMetronome } from "../../hooks/useMetronome";
-import { MetronomeControls } from "../../components/MetronomeControls";
+import { BasicMetronomeControls } from "../../components/BasicMetronomeControls";
+import { SettingsBottomSheet } from "../../components/SettingsBottomSheet";
 import { BeatCard } from "../../components/BeatCard";
 import { Header } from "../../components/Header";
 
@@ -18,6 +19,7 @@ export const RoomPage = () => {
   const [localTempo, setLocalTempo] = useState(tempo);
   const [localBeats, setLocalBeats] = useState(beats);
   const [currentBeat, setCurrentBeat] = useState(1);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   useEffect(() => {
     console.log(messages);
@@ -66,6 +68,14 @@ export const RoomPage = () => {
     clearTapTimes();
   };
 
+  const handleSettingsClick = () => {
+    setIsSettingsOpen(true);
+  };
+
+  const handleCloseSettings = () => {
+    setIsSettingsOpen(false);
+  };
+
   return (
     <div className={vstack({alignItems: 'stretch', gap: 0, h: '100dvh' })}>
       <Header />
@@ -87,12 +97,21 @@ export const RoomPage = () => {
         )} */}
 
         {/* 메트로놈 컨트롤 */}
-        <MetronomeControls
+        <BasicMetronomeControls
           isPlaying={isPlaying}
           tempo={localTempo}
           beats={localBeats}
           onStart={handleStartMetronome}
           onStop={handleStopMetronome}
+          onSettingsClick={handleSettingsClick}
+        />
+
+        {/* 설정 바텀시트 */}
+        <SettingsBottomSheet
+          isOpen={isSettingsOpen}
+          onClose={handleCloseSettings}
+          tempo={localTempo}
+          beats={localBeats}
           onTempoChange={(t) => { setLocalTempo(t); changeTempo(t); }}
           onBeatsChange={(b) => { setLocalBeats(b); changeBeats(b); }}
           onTapTempo={handleTapTempo}

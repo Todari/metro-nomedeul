@@ -101,8 +101,15 @@ newStartTime := now - int64(elapsedBeats*secondsPerBeatNew*1000.0)
   - 일반 박자: 회색 배경 (neutral.300)
   - 전체 화면 크기로 확장 (w: full, h: full)
 - **QR 표시**: 현재 주석 처리 (추후 복원 예정)
-- **메트로놈 컨트롤**: 박자 ScrollPicker + BPM ScrollPicker
-- **Tab 기능**: 그레이 "Tab" 버튼과 초기화 버튼
+- **기본 메트로놈 컨트롤**: 
+  - 현재 BPM과 박자 상태 표시
+  - 시작/정지 버튼
+  - 설정 버튼 (톱니바퀴 아이콘)
+- **설정 바텀시트**: 설정 버튼 클릭 시 나타나는 하단 시트
+  - BPM ScrollPicker (세로 스크롤)
+  - 박자 HorizontalScrollPicker (가로 스크롤)
+  - 탭 템포 버튼과 초기화 버튼
+  - 오버레이와 닫기 버튼
 
 ### 반응형 디자인
 - **모바일 최적화**: 터치 친화적인 버튼 크기
@@ -184,9 +191,17 @@ newStartTime := now - int64(elapsedBeats*secondsPerBeatNew*1000.0)
 - **연결 관리**: WebSocket 자동 재연결
 - **오디오 최적화**: Web Worker를 통한 안정적인 타이밍
 
-## 10. 최근 변경사항 (v2.0)
+## 10. 최근 변경사항 (v2.1)
 
-### 레이아웃 개선
+### UI/UX 개선 - 컴포넌트 분리
+- **MetronomeControls 분리**: 기존 단일 컴포넌트를 두 개로 분리
+  - **BasicMetronomeControls**: 메인 화면 기본 컨트롤 (시작/정지, 상태 표시, 설정 버튼)
+  - **SettingsBottomSheet**: 설정 전용 바텀시트 (BPM/박자 조절, 탭 템포)
+- **1depth 깊은 설정**: 설정 버튼을 통한 세부 조절 기능 접근
+- **깔끔한 메인 화면**: 기본 컨트롤만 표시하여 더 깔끔한 UI
+- **모바일 친화적**: 바텀시트 형태로 모바일에서 사용하기 편리
+
+### 레이아웃 개선 (v2.0)
 - **전체 화면 활용**: 100dvh 높이로 전체 화면 사용
 - **헤더 추가**: 상단 고정 헤더 컴포넌트 도입
 - **박자 카드 확장**: 전체 화면 크기로 박자 시각화 강화
@@ -207,3 +222,4 @@ newStartTime := now - int64(elapsedBeats*secondsPerBeatNew*1000.0)
 - **주석 처리**: QR 표시 관련 코드 임시 비활성화
 - **Import 정리**: 사용하지 않는 컴포넌트 import 제거
 - **Props 최적화**: 불필요한 props 제거로 컴포넌트 단순화
+- **컴포넌트 삭제**: 기존 MetronomeControls.tsx 파일 제거
