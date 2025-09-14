@@ -1,4 +1,5 @@
 import { css } from "../../styled-system/css";
+import { Button } from "./Button";
 
 interface BasicMetronomeControlsProps {
   isPlaying: boolean;
@@ -38,42 +39,49 @@ export function BasicMetronomeControls(props: BasicMetronomeControlsProps) {
       {/* 컨트롤 버튼들 */}
       <div className={css({ display: 'flex', gap: 3, alignItems: 'center' })}>
         {!isPlaying ? (
-          <button 
+          <Button 
             className={css({ 
-              px: 6, 
-              py: 3, 
+              p: 3, 
               rounded: 'lg', 
               bg: 'orange.600', 
               color: 'white', 
               _hover: { bg: 'orange.700' }, 
-              _active: { bg: 'orange.800' }, 
-              fontWeight: 'medium',
-              fontSize: 'lg'
+              _active: { bg: 'orange.800' },
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             })} 
             onClick={onStart}
+            title="시작"
           >
-            시작
-          </button>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 5V19L19 12L8 5Z" fill="currentColor"/>
+            </svg>
+          </Button>
         ) : (
-          <button 
+          <Button 
             className={css({ 
-              px: 6, 
-              py: 3, 
+              p: 3, 
               rounded: 'lg', 
               bg: 'red.600', 
               color: 'white', 
               _hover: { bg: 'red.700' }, 
-              _active: { bg: 'red.800' }, 
-              fontWeight: 'medium',
-              fontSize: 'lg'
+              _active: { bg: 'red.800' },
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             })} 
             onClick={onStop}
+            title="정지"
           >
-            정지
-          </button>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="6" width="4" height="12" fill="currentColor"/>
+              <rect x="14" y="6" width="4" height="12" fill="currentColor"/>
+            </svg>
+          </Button>
         )}
         
-        <button 
+        <Button 
           className={css({ 
             p: 3, 
             rounded: 'lg', 
@@ -104,7 +112,7 @@ export function BasicMetronomeControls(props: BasicMetronomeControlsProps) {
               strokeLinejoin="round"
             />
           </svg>
-        </button>
+        </Button>
       </div>
     </div>
   );

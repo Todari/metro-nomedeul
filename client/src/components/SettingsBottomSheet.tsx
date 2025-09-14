@@ -1,6 +1,7 @@
 import { css } from "../../styled-system/css";
 import { ScrollPicker } from "./ScrollPicker";
 import { HorizontalScrollPicker } from "./HorizontalScrollPicker";
+import { Button } from "./Button";
 
 interface SettingsBottomSheetProps {
   isOpen: boolean;
@@ -75,7 +76,7 @@ export function SettingsBottomSheet(props: SettingsBottomSheetProps) {
           })}>
             메트로놈 설정
           </h2>
-          <button
+          <Button
             className={css({
               p: 2,
               rounded: 'lg',
@@ -89,14 +90,14 @@ export function SettingsBottomSheet(props: SettingsBottomSheetProps) {
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-          </button>
+          </Button>
         </div>
 
         {/* 설정 컨트롤들 */}
         <div className={css({ display: 'grid', gap: 6 })}>
           {/* 탭 템포 버튼들 */}
           <div className={css({ display: 'flex', gap: 3, flexWrap: 'wrap' })}>
-            <button 
+            <Button 
               className={css({ 
                 px: 4, 
                 py: 3, 
@@ -111,9 +112,9 @@ export function SettingsBottomSheet(props: SettingsBottomSheetProps) {
               onClick={onTapTempo}
             >
               탭 템포 ({tapCount})
-            </button>
+            </Button>
             {tapCount > 0 && (
-              <button
+              <Button
                 className={css({ 
                   px: 3, 
                   py: 3, 
@@ -128,7 +129,7 @@ export function SettingsBottomSheet(props: SettingsBottomSheetProps) {
                 onClick={onClearTap}
               >
                 초기화
-              </button>
+              </Button>
             )}
           </div>
 
