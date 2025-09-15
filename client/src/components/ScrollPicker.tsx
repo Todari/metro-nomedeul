@@ -53,18 +53,6 @@ export function ScrollPicker({
     }
   }, [selectedIndex, itemHeight, isAnimating]);
 
-  // 디버깅을 위한 로그
-  useEffect(() => {
-    console.log('ScrollPicker Debug:', {
-      value,
-      selectedIndex,
-      offset,
-      centerOffset,
-      itemHeight,
-      topPosition: centerOffset + offset,
-      currentIndex: Math.round(-offset / itemHeight)
-    });
-  }, [value, selectedIndex, offset, centerOffset, itemHeight]);
 
   // 스냅 애니메이션
   const snapToValue = useCallback((targetIndex: number) => {

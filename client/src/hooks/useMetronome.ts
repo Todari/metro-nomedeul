@@ -25,18 +25,14 @@ export const useMetronome = (websocket: WebSocket | null, sendMessage?: (message
       return true;
     }
     if (!metronomeRef.current || isInitializing) {
-      console.log('초기화 조건 불만족:', { metronomeRef: !!metronomeRef.current, isInitializing });
       return false;
     }
     
-    console.log('오디오 초기화 시작');
     setIsInitializing(true);
     try {
       const success = await metronomeRef.current.initialize();
-      console.log('오디오 초기화 결과:', success);
       if (success) {
         setIsAudioReady(true);
-        console.log('오디오 준비 완료');
       }
       return success;
     } catch (error) {

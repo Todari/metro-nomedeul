@@ -19,7 +19,7 @@ export const RoomPage = () => {
   // WebSocket 메시지 핸들러를 위한 ref
   const messageHandlerRef = useRef<((data: MetronomeState) => void) | null>(null);
   
-  const { messages, socket, sendMessage } = useWebSocket(wsUrl, messageHandlerRef.current || undefined);
+  const { socket, sendMessage } = useWebSocket(wsUrl, messageHandlerRef.current || undefined);
   const { 
     isPlaying, 
     tempo, 
@@ -48,9 +48,6 @@ export const RoomPage = () => {
     messageHandlerRef.current = handleWebSocketMessage;
   }, [handleWebSocketMessage]);
 
-  useEffect(() => {
-    console.log(messages);
-  }, [messages]);
   
   useEffect(() => {
     setLocalTempo(tempo);

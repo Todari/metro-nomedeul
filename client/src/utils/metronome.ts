@@ -56,15 +56,12 @@ export class Metronome {
 
   // 초기화 (사용자 상호작용 후 호출)
   public async initialize(): Promise<boolean> {
-    console.log('Metronome.initialize() 호출됨');
     if (this.isInitializing) {
-      console.log('이미 초기화 중입니다');
       return false;
     }
     this.isInitializing = true;
 
     try {
-      console.log('AudioContext 생성 시작');
       // AudioContext 생성
       const AudioContextCtor = (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }).AudioContext
         ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -73,22 +70,16 @@ export class Metronome {
       }
       
       this.audioContext = new AudioContextCtor();
-      console.log('AudioContext 생성 완료:', this.audioContext.state);
       
       // AudioContext가 suspended 상태인 경우 resume (iOS 사파리 대응: user gesture 내에서만 허용)
       if (this.audioContext && this.audioContext.state !== 'running') {
-        console.log('AudioContext resume 시도');
         await this.audioContext.resume();
-        console.log('AudioContext resume 완료:', this.audioContext.state);
       }
 
       // 사운드 로드
-      console.log('사운드 로드 시작');
       await this.loadSounds();
-      console.log('사운드 로드 완료');
       
       this.isAudioReady = true;
-      console.log('Metronome 초기화 완료');
       return true;
     } catch (error) {
       console.error('Metronome 초기화 실패:', error);
@@ -118,7 +109,6 @@ export class Metronome {
     });
 
     try {
-      console.log('클릭 사운드 로드 시작');
       const clickUrl = this.resolveAssetUrl('sounds/click.mp3');
       const clickResponse = await fetch(clickUrl, { cache: 'force-cache' });
       if (!clickResponse.ok) {
@@ -127,9 +117,7 @@ export class Metronome {
       const clickBuffer = await clickResponse.arrayBuffer();
       if (!this.audioContext || this.audioContext !== ctx) throw new Error('AudioContext changed or disposed during load (click)');
       this.clickSound = await decode(clickBuffer);
-      console.log('클릭 사운드 로드 완료');
 
-      console.log('액센트 사운드 로드 시작');
       const accentUrl = this.resolveAssetUrl('sounds/accent.mp3');
       const accentResponse = await fetch(accentUrl, { cache: 'force-cache' });
       if (!accentResponse.ok) {
@@ -138,9 +126,6 @@ export class Metronome {
       const accentBuffer = await accentResponse.arrayBuffer();
       if (!this.audioContext || this.audioContext !== ctx) throw new Error('AudioContext changed or disposed during load (accent)');
       this.accentSound = await decode(accentBuffer);
-      console.log('액센트 사운드 로드 완료');
-
-      console.log('사운드 로드 완료');
     } catch (error) {
       console.error('사운드 로드 실패:', error);
       throw error;
@@ -536,7 +521,6 @@ export class Metronome {
     const calculatedBPM = Math.round(60000 / avgInterval);
     const clampedBPM = Math.max(40, Math.min(240, calculatedBPM));
     
-    console.log(`탭 BPM 계산: ${clampedBPM}`);
     return clampedBPM;
   }
 

@@ -83,7 +83,6 @@ function App() {
             </div>
             <QrScanner
               onDetected={(text) => {
-                console.log('QR 코드 감지:', text);
                 try {
                   // URL 형태인 경우 파싱
                   const url = new URL(text);
@@ -91,7 +90,6 @@ function App() {
                   const idx = parts.findIndex((p) => p === 'room');
                   if (idx >= 0 && parts[idx + 1]) {
                     const roomId = parts[idx + 1];
-                    console.log('방 ID 추출:', roomId);
                     navigate(`/room/${roomId}`);
                   } else {
                     // URL이지만 room 경로가 아닌 경우
@@ -100,7 +98,6 @@ function App() {
                 } catch {
                   // URL이 아닌 경우 직접 방 ID로 처리
                   if (text.length === 8) {
-                    console.log('직접 방 ID 입력:', text);
                     navigate(`/room/${text}`);
                   } else {
                     alert('올바른 방 ID가 아닙니다. 8자리 코드를 확인해주세요.');
