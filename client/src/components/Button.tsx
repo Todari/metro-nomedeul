@@ -1,12 +1,12 @@
-import { css } from "../../styled-system/css";
+import { css, cx } from "../../styled-system/css";
 
 type ButtonVariant = 'primary' | 'secondary' | 'destructive';
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
 }
 
-export function Button({ variant = 'primary', ...props }: ButtonProps) {
-  return <button className={css({
+export function Button({ variant = 'secondary', className, ...props }: ButtonProps) {
+  const base = css({
     px: 4,
     py: 2.5,
     rounded: 'xl',
@@ -20,5 +20,6 @@ export function Button({ variant = 'primary', ...props }: ButtonProps) {
     _active: {
       bg: variant === 'primary' ? 'orange.800' : variant === 'secondary' ? 'neutral.800' : 'red.800',
     },
-  })} {...props} />;
+  });
+  return <button className={cx(base, className)} {...props} />;
 }

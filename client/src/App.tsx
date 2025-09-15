@@ -25,16 +25,44 @@ function App() {
   return (
     <div className={vstack({alignItems: 'stretch', gap: 0 })}>
       <Header />
-      <div className={vstack({ gap: 2, p: 4, alignItems: 'flex-start' })}>
-        <h2 className={css({ fontSize: 'xl', fontWeight: 'semibold', color: 'white' })}>방 입장하기</h2>
-        <p className={css({ color: 'neutral.400', fontSize: 'sm' })}>메트로놈을 함께 들을 방을 생성해 주세요</p>
-      
+      <div className={vstack({ gap: 4, p: 4, alignItems: 'flex-start' })}>
+        <div
+          className={css({
+            w: 'full',
+            p: 6,
+            bg: 'neutral.800',
+            rounded: '2xl',
+          })}
+        >
+          <div className={vstack({ gap: 6, alignItems: 'flex-start' })}>
+            <h2 className={css({ fontSize: 'xl', fontWeight: 'bold', color: 'white' })}>
+              메트로놈이 모여 메트로놈"들"
+            </h2>
+            <p className={css({ color: 'neutral.500', lineHeight: '1.7' })}>
+              메트로놈들은 여러명이 동시에 클릭을 들을 수 있게 해줍니다.
+              아래와 같은 상황에서 사용해 보세요.
+            </p>
 
-        <div className={hstack({ gap: 3, mt: 4 })}>
+            <div className={vstack({ gap: 3, alignItems: 'flex-start' })}>
+              <span className={css({ color: 'neutral.300', fontWeight:'bold' })}>🎤 보컬이 이어폰을 끼고 노래부르고 싶을때!</span>
+              <span className={css({ color: 'neutral.300', fontWeight:'bold' })}>🥁 드럼이 박자를 제대로 맞추는지 검사할때!</span>
+              <span className={css({ color: 'neutral.300', fontWeight:'bold' })}>🎸 기타가 드럼소리를 안듣고 지 맘대로 칠 때!</span>
+              <span className={css({ color: 'neutral.300', fontWeight:'bold' })}>🦻 베이스의 소리가 안들릴 때!</span>
+            </div>
+
+            <p className={css({ color: 'neutral.500', fontWeight: 'semibold', mt: 2 })}>
+              메트로놈들과 함께 박자잘맞추는놈들이 되어봅시다
+            </p>
+          </div>
+        </div>
+
+        
+        
           <Button
             variant="primary"
             onClick={handleCreateRoom}
             aria-label="방 생성하기"
+            className={css({ w: 'full' })}
           >
             방 생성하기
           </Button>
@@ -45,7 +73,7 @@ function App() {
           >
             방 입장하기
           </Button> */}
-        </div>
+        
 
         {showScanner && (
           <div className={css({ mt: 4, p: 4, bg: 'white/70', rounded: 'xl', backdropFilter: 'saturate(180%) blur(8px)', border: '1px solid', borderColor: 'neutral.300' })}>

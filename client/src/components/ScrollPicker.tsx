@@ -97,7 +97,7 @@ export function ScrollPicker({
       cancelAnimationFrame(animationRef.current);
     }
     animationRef.current = requestAnimationFrame((time) => animate(time));
-  }, [offset, centerOffset, itemHeight, values, onChange]);
+  }, [offset, itemHeight, values, onChange]);
 
   // 마우스/터치 이벤트 핸들러
   const handleStart = useCallback((clientY: number) => {
