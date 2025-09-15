@@ -24,8 +24,6 @@ export function SettingsBottomSheet(props: SettingsBottomSheetProps) {
     onTempoChange, 
     onBeatsChange, 
     onTapTempo, 
-    onClearTap, 
-    tapCount 
   } = props;
 
   if (!isOpen) return null;
@@ -111,26 +109,8 @@ export function SettingsBottomSheet(props: SettingsBottomSheetProps) {
               })} 
               onClick={onTapTempo}
             >
-              탭 템포 ({tapCount})
+              Tab
             </Button>
-            {tapCount > 0 && (
-              <Button
-                className={css({ 
-                  px: 3, 
-                  py: 3, 
-                  rounded: 'lg', 
-                  bg: 'neutral.500', 
-                  color: 'white', 
-                  _hover: { bg: 'neutral.600' }, 
-                  _active: { bg: 'neutral.700' },
-                  fontSize: 'xs',
-                  fontWeight: 'medium'
-                })} 
-                onClick={onClearTap}
-              >
-                초기화
-              </Button>
-            )}
           </div>
 
           {/* 박자 설정 */}

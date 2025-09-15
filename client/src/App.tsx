@@ -14,7 +14,7 @@ function App() {
   const handleCreateRoom = () => {
     createRoom();
   };
-  const [showScanner, setShowScanner] = useState(false);
+  const [showScanner] = useState(false);
 
   useEffect(() => {
     if (isSuccess) {

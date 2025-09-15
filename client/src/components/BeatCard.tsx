@@ -23,10 +23,10 @@ export function BeatCard({ currentBeat, isPlaying, className }: BeatCardProps) {
       setIsAccent(true);
       setIsRegular(false);
       
-      // 200ms 후에 원래 색상으로 돌아가기
+      // 100ms 후에 원래 색상으로 돌아가기
       const timer = setTimeout(() => {
         setIsAccent(false);
-      }, 200);
+      }, 100);
       
       return () => clearTimeout(timer);
     } 
@@ -35,10 +35,10 @@ export function BeatCard({ currentBeat, isPlaying, className }: BeatCardProps) {
       setIsRegular(true);
       setIsAccent(false);
       
-      // 200ms 후에 원래 색상으로 돌아가기
+      // 100ms 후에 원래 색상으로 돌아가기
       const timer = setTimeout(() => {
         setIsRegular(false);
-      }, 200);
+      }, 100);
       
       return () => clearTimeout(timer);
     }
