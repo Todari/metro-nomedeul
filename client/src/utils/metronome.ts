@@ -24,9 +24,11 @@ export class Metronome {
   private isAudioReady: boolean = false;
   
   // 타이밍 관련
-  private startTime: number = 0;
-  private nextNoteTime: number = 0;
+  private startTime: number = 0; // wall-clock(ms) - 유지용
+  private startAudioTimeSec: number = 0; // AudioContext 기준 시간(sec)
+  private nextNoteTimeSec: number = 0; // 다음 노트 시간(sec, AudioContext 기준)
   private animationFrameId: number | null = null;
+  private readonly scheduleAheadSec: number = 0.05; // 50ms 앞당겨 예약
   
   // WebSocket
   private websocket: WebSocket | null = null;
@@ -250,16 +252,17 @@ export class Metronome {
       this.isPlaying = true;
       this.startTime = Date.now();
       this.beatCount = 0;
-      
-      // 다음 노트 시간 계산
+
+      // 다음 노트 시간 계산 (AudioContext 기준)
       // 템포 글라이드 초기화
       this.currentTempo = this.tempo;
       this.targetTempo = this.tempo;
       this.tempoGlideFrom = this.tempo;
       this.tempoGlideStartTime = this.startTime;
 
-      const secondsPerBeat = 60.0 / this.currentTempo;
-      this.nextNoteTime = this.startTime + (secondsPerBeat * 1000);
+      this.startAudioTimeSec = this.audioContext!.currentTime;
+      // 첫 박을 즉시 스케줄하기 위해 현재 시각으로 초기화
+      this.nextNoteTimeSec = this.startAudioTimeSec + 0.001;
 
       // 애니메이션 프레임 시작
       this.scheduleNextBeat();
@@ -292,23 +295,19 @@ export class Metronome {
 
   // 다음 비트 스케줄링
   private scheduleNextBeat() {
-    if (!this.isPlaying) return;
+    if (!this.isPlaying || !this.audioContext) return;
 
-    const now = Date.now();
-    const effTempo = this.getEffectiveTempo(now);
+    const nowAudio = this.audioContext.currentTime;
+    const effTempo = this.getEffectiveTempo(Date.now());
     const secondsPerBeat = 60.0 / effTempo;
-    const beatInterval = secondsPerBeat * 1000; // 밀리초
 
-    // 다음 비트 시간이 되었는지 확인
-    if (now >= this.nextNoteTime) {
-      this.playBeat(this.beatCount);
-      
-      // 다음 비트 준비
+    // schedule-ahead 윈도우 내의 모든 노트를 예약
+    while (this.nextNoteTimeSec <= nowAudio + this.scheduleAheadSec) {
+      this.scheduleNote(this.nextNoteTimeSec, this.beatCount);
+      this.nextNoteTimeSec += secondsPerBeat;
       this.beatCount = (this.beatCount + 1) % this.beatsPerBar;
-      this.nextNoteTime += beatInterval;
     }
 
-    // 다음 프레임에서 계속 확인
     this.animationFrameId = requestAnimationFrame(() => this.scheduleNextBeat());
   }
 
@@ -328,30 +327,24 @@ export class Metronome {
   }
 
   // 비트 재생
-  private playBeat(beatNumber: number) {
+  private scheduleNote(timeSec: number, beatNumber: number) {
     if (!this.audioContext || (!this.clickSound && !this.accentSound)) return;
 
-    // UI 동기화를 위해 즉시 비트 콜백 알림(오디오 스케줄 직전)
+    // UI 동기화를 위해 즉시 비트 콜백 알림 (스케줄 직전)
     this.onBeat?.(beatNumber, this.beatsPerBar);
 
     const source = this.audioContext.createBufferSource();
     const sound = beatNumber === 0 ? this.accentSound : this.clickSound;
-    
     if (!sound) return;
-
     source.buffer = sound;
-    
-    // 게인 노드 생성
+
     const gainNode = this.audioContext.createGain();
     gainNode.gain.value = beatNumber === 0 ? 1.0 : 0.8;
-    
-    // 연결 및 재생
     source.connect(gainNode);
     gainNode.connect(this.audioContext.destination);
-    
-    const currentTime = this.audioContext.currentTime;
-    source.start(currentTime);
-    source.stop(currentTime + 0.05);
+
+    source.start(timeSec);
+    source.stop(timeSec + 0.05);
   }
 
   // 서버에 시작 요청

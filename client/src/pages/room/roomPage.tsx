@@ -78,7 +78,7 @@ export const RoomPage = () => {
       <div className={vstack({ gap: 4, alignItems: 'stretch', maxW: '4xl', h: 'full' })}>
         
         {/* 박자 카드 */}
-        <div className={css({ display: 'flex', justifyContent: 'center', alignItems: 'center', w: 'full', h: 'fit-content' })}>
+        <div className={css({ display: 'flex', justifyContent: 'center', alignItems: 'center', w: 'full', h: 'full' })}>
           <BeatCard 
             currentBeat={currentBeat} 
             isPlaying={isPlaying}
