@@ -18,7 +18,7 @@ createRoot(document.getElementById('root')!).render(
             minH: '100dvh',
             bg: 'neutral.900',
             color: 'white',
-            fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Noto Sans KR, Apple SD Gothic Neo, sans-serif'
+            fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Noto Sans KR, Apple SD Gothic Neo, sans-serif',
           })
         }
       >

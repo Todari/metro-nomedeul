@@ -9,17 +9,19 @@ interface MetronomeControlsProps {
   onStart: () => void;
   onStop: () => void;
   onSettingsClick: () => void;
+  onShareClick: () => void;
 }
 
 export function MetronomeControls(props: MetronomeControlsProps) {
-  const { isPlaying, tempo, beats, isInitializing, onStart, onStop, onSettingsClick } = props;
+  const { isPlaying, tempo, beats, isInitializing, onStart, onStop, onSettingsClick, onShareClick } = props;
 
   return (
     <div className={css({ 
       display: 'flex', 
       justifyContent: 'space-between', 
       alignItems: 'center',
-      p: 6, 
+      p: 6,
+      mb: 4,
       bg: 'neutral.800', 
       rounded: 'xl', 
       shadow: 'lg' 
@@ -124,6 +126,28 @@ export function MetronomeControls(props: MetronomeControlsProps) {
               strokeLinecap="round" 
               strokeLinejoin="round"
             />
+          </svg>
+        </Button>
+
+        <Button 
+          className={css({ 
+            p: 3, 
+            rounded: 'lg', 
+            bg: 'neutral.600', 
+            color: 'white', 
+            _hover: { bg: 'neutral.700' }, 
+            _active: { bg: 'neutral.800' },
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          })} 
+          onClick={onShareClick}
+          title="공유"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 12V19C4 20.1046 4.89543 21 6 21H18C19.1046 21 20 20.1046 20 19V12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M12 3V15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M7 8L12 3L17 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </Button>
       </div>

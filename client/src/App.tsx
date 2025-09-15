@@ -27,7 +27,7 @@ function App() {
       <Header />
       <div className={vstack({ gap: 2, p: 4, alignItems: 'flex-start' })}>
         <h2 className={css({ fontSize: 'xl', fontWeight: 'semibold', color: 'white' })}>방 입장하기</h2>
-        <p className={css({ color: 'neutral.400', fontSize: 'sm' })}>방을 생성하거나 QR로 입장하세요</p>
+        <p className={css({ color: 'neutral.400', fontSize: 'sm' })}>메트로놈을 함께 들을 방을 생성해 주세요</p>
       
 
         <div className={hstack({ gap: 3, mt: 4 })}>
@@ -38,13 +38,13 @@ function App() {
           >
             방 생성하기
           </Button>
-          <Button
+          {/* <Button
             variant="secondary"
             onClick={() => setShowScanner((v) => !v)}
             aria-label="방 입장하기"
           >
             방 입장하기
-          </Button>
+          </Button> */}
         </div>
 
         {showScanner && (

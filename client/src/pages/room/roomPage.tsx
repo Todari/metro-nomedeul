@@ -7,6 +7,7 @@ import { CONFIG } from "../../apis/config";
 import { useMetronome } from "../../hooks/useMetronome";
 import { MetronomeControls } from "../../components/MetronomeControls";
 import { SettingsBottomSheet } from "../../components/SettingsBottomSheet";
+import { ShareBottomSheet } from "../../components/ShareBottomSheet";
 import { BeatCard } from "../../components/BeatCard";
 import { Header } from "../../components/Header";
 
@@ -33,6 +34,8 @@ export const RoomPage = () => {
   const [localBeats, setLocalBeats] = useState(beats);
   // 엔진 비트 콜백과 동기화하므로 로컬 카운터 제거
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
     console.log(messages);
@@ -72,6 +75,25 @@ export const RoomPage = () => {
     setIsSettingsOpen(false);
   };
 
+  const handleShareClick = () => {
+    setIsShareOpen(true);
+  };
+
+  const handleCloseShare = () => {
+    setIsShareOpen(false);
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setToast('복사되었습니다');
+      setTimeout(() => setToast(null), 1500);
+    } catch {
+      setToast('복사 실패');
+      setTimeout(() => setToast(null), 1500);
+    }
+  };
+
   return (
     <div className={vstack({alignItems: 'stretch', gap: 0, h: '100dvh' })}>
       <Header />
@@ -101,6 +123,7 @@ export const RoomPage = () => {
           onStart={handleStartMetronome}
           onStop={handleStopMetronome}
           onSettingsClick={handleSettingsClick}
+          onShareClick={handleShareClick}
         />
 
         {/* 설정 바텀시트 */}
@@ -115,6 +138,13 @@ export const RoomPage = () => {
           onClearTap={handleClearTap}
           tapCount={getTapCount()}
         />
+
+        <ShareBottomSheet isOpen={isShareOpen} onClose={handleCloseShare} uuid={uuid} onCopied={handleCopyLink} />
+
+        {/* 토스트 */}
+        {toast && (
+          <div className={css({ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', bg: 'black/80', color: 'white', px: 4, py: 2, rounded: 'md', zIndex: 60 })}>{toast}</div>
+        )}
       </div>
     </div>
   );
