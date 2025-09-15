@@ -46,12 +46,12 @@ export function ScrollPicker({
 
   // 초기 오프셋 설정
   useEffect(() => {
-    if (selectedIndex !== -1) {
+    if (selectedIndex !== -1 && !isDraggingRef.current && !isAnimating) {
       // 선택된 아이템이 중앙에 오도록 오프셋 계산
       const newOffset = -selectedIndex * itemHeight;
       setOffset(newOffset);
     }
-  }, [selectedIndex, itemHeight]);
+  }, [selectedIndex, itemHeight, isAnimating]);
 
   // 디버깅을 위한 로그
   useEffect(() => {
@@ -120,7 +120,15 @@ export function ScrollPicker({
     const deltaY = clientY - startY;
     const newOffset = startOffset + deltaY; // 원래 방향으로 복원
     setOffset(newOffset);
-  }, [startY, startOffset]);
+
+    // 이동 중에도 중앙값을 실시간 반영
+    const idx = Math.round(-newOffset / itemHeight);
+    const clampedIdx = Math.max(0, Math.min(values.length - 1, idx));
+    const nextVal = values[clampedIdx];
+    if (nextVal !== value) {
+      onChange(nextVal);
+    }
+  }, [startY, startOffset, itemHeight, values, value, onChange]);
 
   const handleEnd = useCallback(() => {
     if (!isDraggingRef.current) return;

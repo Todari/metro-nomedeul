@@ -5,16 +5,14 @@ interface MetronomeControlsProps {
   isPlaying: boolean;
   tempo: number;
   beats: number;
-  isAudioReady: boolean;
   isInitializing: boolean;
   onStart: () => void;
   onStop: () => void;
   onSettingsClick: () => void;
-  onInitializeAudio: () => void;
 }
 
 export function MetronomeControls(props: MetronomeControlsProps) {
-  const { isPlaying, tempo, beats, isAudioReady, isInitializing, onStart, onStop, onSettingsClick, onInitializeAudio } = props;
+  const { isPlaying, tempo, beats, isInitializing, onStart, onStop, onSettingsClick } = props;
 
   return (
     <div className={css({ 
@@ -41,38 +39,7 @@ export function MetronomeControls(props: MetronomeControlsProps) {
 
       {/* 컨트롤 버튼들 */}
       <div className={css({ display: 'flex', gap: 3, alignItems: 'center' })}>
-        {!isAudioReady ? (
-          <Button 
-            className={css({ 
-              p: 3, 
-              rounded: 'lg', 
-              bg: 'neutral.500', 
-              color: 'white', 
-              _hover: { bg: 'neutral.600' }, 
-              _active: { bg: 'neutral.700' },
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              opacity: isInitializing ? 0.7 : 1
-            })} 
-            onClick={onInitializeAudio}
-            disabled={isInitializing}
-            title={isInitializing ? "오디오 초기화 중..." : "오디오 초기화"}
-          >
-            {isInitializing ? (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={css({ animation: 'spin' })}>
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none" strokeDasharray="31.416" strokeDashoffset="31.416">
-                  <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
-                  <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
-                </circle>
-              </svg>
-            ) : (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/>
-              </svg>
-            )}
-          </Button>
-        ) : !isPlaying ? (
+        {!isPlaying ? (
           <Button 
             className={css({ 
               p: 3, 
@@ -83,14 +50,26 @@ export function MetronomeControls(props: MetronomeControlsProps) {
               _active: { bg: 'orange.800' },
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              opacity: isInitializing ? 0.7 : 1,
+              cursor: isInitializing ? 'not-allowed' : 'pointer'
             })} 
             onClick={onStart}
-            title="시작"
+            title={isInitializing ? '오디오 초기화 중...' : '시작'}
+            disabled={isInitializing}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M8 5V19L19 12L8 5Z" fill="currentColor"/>
-            </svg>
+            {isInitializing ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={css({ animation: 'spin' })}>
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none" strokeDasharray="31.416" strokeDashoffset="31.416">
+                  <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
+                  <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
+                </circle>
+              </svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 5V19L19 12L8 5Z" fill="currentColor"/>
+              </svg>
+            )}
           </Button>
         ) : (
           <Button 

@@ -67,6 +67,9 @@ server/
 - Tab BPM 기능: 사용자 탭 간격을 측정하여 평균 BPM 계산 (최근 4번 탭 기준).
 - 자연스러운 BPM 변경: 박자 위치를 유지하면서 간격만 조정하는 알고리즘 구현.
 - 사운드 로딩: 메트로놈 시작 시 사운드가 로드되지 않은 경우 자동으로 로딩하고 완료 후 재생.
+ - Tempo Glide: 템포 변경 시 루프를 멈추지 않고 목표 BPM으로 일정 시간 동안 점진적으로 수렴
+ - Beat Callback: `setOnBeat((beatIndex, beatsPerBar) => void)` 제공, UI는 이 콜백으로 엔진과 위상 동기화
+ - Asset URL: `import.meta.env.BASE_URL`을 사용해 정적 경로(`/sounds/*`) 계산
 
 ## UI 컴포넌트 설계
 - **Header**: 상단 고정 헤더 컴포넌트

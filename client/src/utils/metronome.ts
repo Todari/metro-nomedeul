@@ -4,10 +4,17 @@
  * 중복 재생 방지 및 상태 관리 강화
  */
 
+// 메트로놈 엔진: 오디오 초기화/사운드 스케줄/WS 동기화
 export class Metronome {
   private audioContext: AudioContext | null = null;
   private isPlaying: boolean = false;
   private tempo: number = 120;
+  // 템포 글라이드용 상태
+  private currentTempo: number = 120;
+  private targetTempo: number = 120;
+  private tempoGlideMs: number = 60; // 템포 변화에 걸리는 시간(ms)
+  private tempoGlideStartTime: number = 0;
+  private tempoGlideFrom: number = 120;
   private beatsPerBar: number = 4;
   private beatCount: number = 0;
   
@@ -23,15 +30,17 @@ export class Metronome {
   
   // WebSocket
   private websocket: WebSocket | null = null;
+  private wsMessageHandler?: (event: MessageEvent<string>) => void;
   
   // 콜백
   private onTempoChange: ((tempo: number) => void) | null = null;
   private onBeatsChange: ((beats: number) => void) | null = null;
   private onPlayStateChange: ((isPlaying: boolean) => void) | null = null;
+  private onBeat: ((beatIndex: number, beatsPerBar: number) => void) | null = null;
   
   // 탭 템포
   private tapTimes: number[] = [];
-  private maxTapTimes: number = 4;
+  private readonly maxTapTimes: number = 4;
 
   // 중복 실행 방지
   private isInitializing: boolean = false;
@@ -44,10 +53,15 @@ export class Metronome {
 
   // 초기화 (사용자 상호작용 후 호출)
   public async initialize(): Promise<boolean> {
-    if (this.isInitializing) return false;
+    console.log('Metronome.initialize() 호출됨');
+    if (this.isInitializing) {
+      console.log('이미 초기화 중입니다');
+      return false;
+    }
     this.isInitializing = true;
 
     try {
+      console.log('AudioContext 생성 시작');
       // AudioContext 생성
       const AudioContextCtor = (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }).AudioContext
         ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -56,14 +70,19 @@ export class Metronome {
       }
       
       this.audioContext = new AudioContextCtor();
+      console.log('AudioContext 생성 완료:', this.audioContext.state);
       
-      // AudioContext가 suspended 상태인 경우 resume
-      if (this.audioContext && this.audioContext.state === 'suspended') {
+      // AudioContext가 suspended 상태인 경우 resume (iOS 사파리 대응: user gesture 내에서만 허용)
+      if (this.audioContext && this.audioContext.state !== 'running') {
+        console.log('AudioContext resume 시도');
         await this.audioContext.resume();
+        console.log('AudioContext resume 완료:', this.audioContext.state);
       }
 
       // 사운드 로드
+      console.log('사운드 로드 시작');
       await this.loadSounds();
+      console.log('사운드 로드 완료');
       
       this.isAudioReady = true;
       console.log('Metronome 초기화 완료');
@@ -78,18 +97,45 @@ export class Metronome {
 
   // 사운드 로드
   private async loadSounds() {
-    if (!this.audioContext) throw new Error('AudioContext not initialized');
+    // 호출 시점의 AudioContext를 로컬 변수로 고정하여 중간에 교체/파괴되어도 안전하게 처리
+    const ctx = this.audioContext;
+    if (!ctx) throw new Error('AudioContext not initialized');
+
+    // decodeAudioData는 브라우저에 따라 Promise/Callback 형태가 다를 수 있음. 안전 래퍼 적용
+    const decode = (buffer: ArrayBuffer) => new Promise<AudioBuffer>((resolve, reject) => {
+      try {
+        const anyCtx = ctx as unknown as { decodeAudioData: (buf: ArrayBuffer, cb?: (b: AudioBuffer) => void, eb?: (e: unknown) => void) => void | Promise<AudioBuffer> };
+        const maybePromise = anyCtx.decodeAudioData(buffer, (b) => resolve(b), (e) => reject(e));
+        if (maybePromise && typeof (maybePromise as Promise<AudioBuffer>).then === 'function') {
+          (maybePromise as Promise<AudioBuffer>).then(resolve).catch(reject);
+        }
+      } catch (err) {
+        reject(err);
+      }
+    });
 
     try {
-      // 클릭 사운드 로드
-      const clickResponse = await fetch('/sounds/click.mp3');
+      console.log('클릭 사운드 로드 시작');
+      const clickUrl = this.resolveAssetUrl('sounds/click.mp3');
+      const clickResponse = await fetch(clickUrl, { cache: 'force-cache' });
+      if (!clickResponse.ok) {
+        throw new Error(`클릭 사운드 로드 실패: ${clickResponse.status}`);
+      }
       const clickBuffer = await clickResponse.arrayBuffer();
-      this.clickSound = await this.audioContext.decodeAudioData(clickBuffer);
+      if (!this.audioContext || this.audioContext !== ctx) throw new Error('AudioContext changed or disposed during load (click)');
+      this.clickSound = await decode(clickBuffer);
+      console.log('클릭 사운드 로드 완료');
 
-      // 액센트 사운드 로드
-      const accentResponse = await fetch('/sounds/accent.mp3');
+      console.log('액센트 사운드 로드 시작');
+      const accentUrl = this.resolveAssetUrl('sounds/accent.mp3');
+      const accentResponse = await fetch(accentUrl, { cache: 'force-cache' });
+      if (!accentResponse.ok) {
+        throw new Error(`액센트 사운드 로드 실패: ${accentResponse.status}`);
+      }
       const accentBuffer = await accentResponse.arrayBuffer();
-      this.accentSound = await this.audioContext.decodeAudioData(accentBuffer);
+      if (!this.audioContext || this.audioContext !== ctx) throw new Error('AudioContext changed or disposed during load (accent)');
+      this.accentSound = await decode(accentBuffer);
+      console.log('액센트 사운드 로드 완료');
 
       console.log('사운드 로드 완료');
     } catch (error) {
@@ -98,11 +144,27 @@ export class Metronome {
     }
   }
 
+  // 정적 자산 URL 계산 (Vite BASE_URL 지원)
+  private resolveAssetUrl(path: string): string {
+    const clean = path.replace(/^\//, '');
+    try {
+      const base: string = ((import.meta as unknown as { env?: { BASE_URL?: string }}).env?.BASE_URL) ?? '/';
+      const prefix = base.endsWith('/') ? base : base + '/';
+      return prefix + clean;
+    } catch {
+      return '/' + clean;
+    }
+  }
+
   // WebSocket 설정
   private setupWebSocket() {
+    // 기존 리스너 분리
+    if (this.websocket && this.wsMessageHandler) {
+      this.websocket.removeEventListener('message', this.wsMessageHandler as EventListener);
+    }
     if (!this.websocket) return;
 
-    this.websocket.addEventListener('message', (event) => {
+    this.wsMessageHandler = (event: MessageEvent<string>) => {
       try {
         const data = JSON.parse(event.data);
         if (data.type === 'metronomeState') {
@@ -111,7 +173,13 @@ export class Metronome {
       } catch (error) {
         console.error('WebSocket 메시지 파싱 실패:', error);
       }
-    });
+    };
+    this.websocket.addEventListener('message', this.wsMessageHandler as EventListener);
+  }
+
+  public setWebSocket(ws: WebSocket | null) {
+    this.websocket = ws;
+    this.setupWebSocket();
   }
 
   // 서버 상태 처리
@@ -124,7 +192,8 @@ export class Metronome {
     serverTime: number;
     roomUuid: string;
   }) {
-    console.log('서버 상태 수신:', state);
+    // 서버 상태 수신 (디버깅 로그는 과도한 스팸 방지를 위해 주석)
+    // console.log('서버 상태 수신:', state);
 
     // 템포 업데이트
     if (state.tempo && state.tempo !== this.tempo) {
@@ -151,6 +220,7 @@ export class Metronome {
   // 메트로놈 시작
   public async start() {
     if (this.isStarting) {
+      // 중복 시작 방지
       console.warn('메트로놈 시작이 이미 진행 중입니다');
       return;
     }
@@ -182,14 +252,20 @@ export class Metronome {
       this.beatCount = 0;
       
       // 다음 노트 시간 계산
-      const secondsPerBeat = 60.0 / this.tempo;
+      // 템포 글라이드 초기화
+      this.currentTempo = this.tempo;
+      this.targetTempo = this.tempo;
+      this.tempoGlideFrom = this.tempo;
+      this.tempoGlideStartTime = this.startTime;
+
+      const secondsPerBeat = 60.0 / this.currentTempo;
       this.nextNoteTime = this.startTime + (secondsPerBeat * 1000);
 
       // 애니메이션 프레임 시작
       this.scheduleNextBeat();
       
       this.onPlayStateChange?.(true);
-      console.log('메트로놈 시작');
+      // console.log('메트로놈 시작');
     } catch (error) {
       console.error('메트로놈 시작 실패:', error);
     } finally {
@@ -211,7 +287,7 @@ export class Metronome {
     this.beatCount = 0;
     
     this.onPlayStateChange?.(false);
-    console.log('메트로놈 정지');
+    // console.log('메트로놈 정지');
   }
 
   // 다음 비트 스케줄링
@@ -219,7 +295,8 @@ export class Metronome {
     if (!this.isPlaying) return;
 
     const now = Date.now();
-    const secondsPerBeat = 60.0 / this.tempo;
+    const effTempo = this.getEffectiveTempo(now);
+    const secondsPerBeat = 60.0 / effTempo;
     const beatInterval = secondsPerBeat * 1000; // 밀리초
 
     // 다음 비트 시간이 되었는지 확인
@@ -235,9 +312,27 @@ export class Metronome {
     this.animationFrameId = requestAnimationFrame(() => this.scheduleNextBeat());
   }
 
+  // 템포 글라이드 계산 (선형 보간)
+  private getEffectiveTempo(nowMs: number): number {
+    if (this.currentTempo === this.targetTempo) {
+      return this.currentTempo;
+    }
+    const elapsed = nowMs - this.tempoGlideStartTime;
+    const t = Math.max(0, Math.min(1, elapsed / this.tempoGlideMs));
+    const next = this.tempoGlideFrom + (this.targetTempo - this.tempoGlideFrom) * t;
+    this.currentTempo = next;
+    if (t >= 1) {
+      this.currentTempo = this.targetTempo;
+    }
+    return this.currentTempo;
+  }
+
   // 비트 재생
   private playBeat(beatNumber: number) {
     if (!this.audioContext || (!this.clickSound && !this.accentSound)) return;
+
+    // UI 동기화를 위해 즉시 비트 콜백 알림(오디오 스케줄 직전)
+    this.onBeat?.(beatNumber, this.beatsPerBar);
 
     const source = this.audioContext.createBufferSource();
     const sound = beatNumber === 0 ? this.accentSound : this.clickSound;
@@ -281,8 +376,9 @@ export class Metronome {
 
   // 서버에 템포 변경 요청
   public requestChangeTempo(tempo: number) {
+    // 로컬에서도 즉시 반영하여 체감 지연 제거
+    this.applyTempoChange(tempo);
     if (!this.websocket) return;
-    
     this.websocket.send(JSON.stringify({
       action: "changeTempo",
       tempo: tempo
@@ -291,12 +387,41 @@ export class Metronome {
 
   // 서버에 박자 변경 요청
   public requestChangeBeats(beats: number) {
+    // 로컬 즉시 반영
+    this.applyBeatsChange(beats);
     if (!this.websocket) return;
-    
     this.websocket.send(JSON.stringify({
       action: "changeBeats",
       beats: beats
     }));
+  }
+
+  /**
+   * 템포 변경을 로컬에 즉시 반영하고, 재생 중이면 위상 유지한 채 스케줄 재계산
+   */
+  private applyTempoChange(newTempo: number) {
+    if (typeof newTempo !== 'number' || !isFinite(newTempo) || newTempo <= 0) return;
+    this.tempo = newTempo; // 목표값 유지 (UI 반영)
+    this.onTempoChange?.(this.tempo);
+
+    // 글라이드 시작
+    const now = Date.now();
+    this.tempoGlideFrom = this.currentTempo;
+    this.targetTempo = newTempo;
+    this.tempoGlideStartTime = now;
+    // nextNoteTime은 건드리지 않아 루프는 계속 돌며 점진적으로 beatInterval만 변화
+  }
+
+  /**
+   * 박자 수 변경을 로컬에 즉시 반영하고, 재생 중이면 비트 카운터만 정리
+   */
+  private applyBeatsChange(newBeats: number) {
+    if (typeof newBeats !== 'number' || !isFinite(newBeats) || newBeats <= 0) return;
+    this.beatsPerBar = newBeats;
+    this.onBeatsChange?.(this.beatsPerBar);
+    if (this.isPlaying) {
+      this.beatCount = this.beatCount % this.beatsPerBar;
+    }
   }
 
   // 탭 템포
@@ -351,6 +476,10 @@ export class Metronome {
 
   public setOnPlayStateChange(callback: (isPlaying: boolean) => void) {
     this.onPlayStateChange = callback;
+  }
+
+  public setOnBeat(callback: (beatIndex: number, beatsPerBar: number) => void) {
+    this.onBeat = callback;
   }
 
   // 상태 확인

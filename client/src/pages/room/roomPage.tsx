@@ -18,7 +18,7 @@ export const RoomPage = () => {
     isPlaying, 
     tempo, 
     beats, 
-    isAudioReady, 
+    currentBeat,
     isInitializing,
     startMetronome, 
     stopMetronome, 
@@ -26,13 +26,12 @@ export const RoomPage = () => {
     changeBeats, 
     tapTempo, 
     clearTapTimes, 
-    getTapCount,
-    initializeAudio
+    getTapCount
   } = useMetronome(socket);
 
   const [localTempo, setLocalTempo] = useState(tempo);
   const [localBeats, setLocalBeats] = useState(beats);
-  const [currentBeat, setCurrentBeat] = useState(1);
+  // 엔진 비트 콜백과 동기화하므로 로컬 카운터 제거
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   useEffect(() => {
@@ -47,24 +46,7 @@ export const RoomPage = () => {
     setLocalBeats(beats);
   }, [beats]);
 
-  // 박자 카운터 시뮬레이션 (실제로는 서버에서 받아와야 함)
-  useEffect(() => {
-    if (!isPlaying) {
-      setCurrentBeat(1);
-      return;
-    }
-
-    const interval = setInterval(() => {
-      setCurrentBeat(prev => {
-        if (prev >= localBeats) {
-          return 1; // 다음 마디로
-        }
-        return prev + 1;
-      });
-    }, (60 / localTempo) * 1000); // BPM에 따른 간격
-
-    return () => clearInterval(interval);
-  }, [isPlaying, localTempo, localBeats]);
+  // 엔진에서 비트 콜백을 통해 동기화하므로 별도 카운터 불필요
   
   const handleStartMetronome = () => {
     startMetronome();
@@ -115,12 +97,10 @@ export const RoomPage = () => {
           isPlaying={isPlaying}
           tempo={localTempo}
           beats={localBeats}
-          isAudioReady={isAudioReady}
           isInitializing={isInitializing}
           onStart={handleStartMetronome}
           onStop={handleStopMetronome}
           onSettingsClick={handleSettingsClick}
-          onInitializeAudio={initializeAudio}
         />
 
         {/* 설정 바텀시트 */}

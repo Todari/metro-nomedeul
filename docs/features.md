@@ -192,7 +192,18 @@ newStartTime := now - int64(elapsedBeats*secondsPerBeatNew*1000.0)
 - **연결 관리**: WebSocket 자동 재연결
 - **오디오 최적화**: Web Worker를 통한 안정적인 타이밍
 
-## 10. 최근 변경사항 (v2.2)
+## 10. 최근 변경사항 (v2.3)
+
+### 오디오 초기화/메트로놈 안정화
+- 시작 버튼 클릭 시 자동 초기화(필요 시) 후 재생 시작
+- 메트로놈 인스턴스를 WebSocket과 독립적으로 선생성, WebSocket은 주입 방식으로 교체
+- WebSocket 리스너 중복 제거로 이중 재생 방지
+- decodeAudioData 브라우저 호환 래퍼 및 AudioContext 상태 보강(resume)
+- 템포 글라이드(Tempo Glide): BPM 변경 시 루프를 멈추지 않고 일정 시간(기본 60-350ms) 동안 자연스럽게 목표 BPM으로 수렴
+ - Beat 콜백 동기화: UI의 `currentBeat`는 엔진의 `setOnBeat`로 동기화되어 템포 변경 중에도 1-2-3-4 위상 유지
+ - ScrollPicker 실시간 반영: 드래그 중에도 중앙에 걸린 값이 즉시 `onChange`로 반영되어 지연 없는 조작감 제공
+
+## 11. 변경 이력 (v2.2)
 
 ### 메트로놈 엔진 개선 - 안정성 강화
 - **새로운 Metronome 클래스**: requestAnimationFrame 기반으로 안정적인 타이밍 제공
