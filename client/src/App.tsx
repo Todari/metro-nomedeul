@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { css } from "../styled-system/css";
-import { vstack, hstack } from "../styled-system/patterns";
+import { vstack } from "../styled-system/patterns";
 import { useRequestPostRoom } from "./hooks/useRequestPostRoom";
 import { useNavigate } from "react-router-dom";
 import { QrScanner } from "./components/QrScanner";
