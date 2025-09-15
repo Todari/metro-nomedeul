@@ -33,6 +33,7 @@ export class Metronome {
   // WebSocket
   private websocket: WebSocket | null = null;
   private wsMessageHandler?: (event: MessageEvent<string>) => void;
+  private sendMessage?: (message: unknown) => void;
   
   // 콜백
   private onTempoChange: ((tempo: number) => void) | null = null;
@@ -184,8 +185,12 @@ export class Metronome {
     this.setupWebSocket();
   }
 
+  public setSendMessage(sendMessage: ((message: unknown) => void) | null) {
+    this.sendMessage = sendMessage || undefined;
+  }
+
   // 서버 상태 처리
-  private handleServerState(state: {
+  public async handleServerState(state: {
     type: string;
     isPlaying: boolean;
     tempo: number;
@@ -212,9 +217,9 @@ export class Metronome {
     // 재생 상태 변경
     if (state.isPlaying !== this.isPlaying) {
       if (state.isPlaying) {
-        this.start();
+        await this.startFromServer();
       } else {
-        this.stop();
+        this.stopFromServer();
       }
     }
   }
@@ -293,6 +298,79 @@ export class Metronome {
     // console.log('메트로놈 정지');
   }
 
+  // 서버 상태로 메트로놈 시작 (WebSocket 메시지 전송 안함)
+  private async startFromServer() {
+    if (this.isStarting) {
+      console.warn('메트로놈 시작이 이미 진행 중입니다');
+      return;
+    }
+
+    if (this.isPlaying) {
+      console.warn('메트로놈이 이미 재생 중입니다');
+      return;
+    }
+
+    this.isStarting = true;
+
+    try {
+      // 오디오가 준비되지 않은 경우 초기화
+      if (!this.isAudioReady) {
+        const initialized = await this.initialize();
+        if (!initialized) {
+          console.error('오디오 초기화 실패');
+          return;
+        }
+      }
+
+      // AudioContext가 suspended 상태인 경우 resume
+      if (this.audioContext?.state === 'suspended') {
+        await this.audioContext.resume();
+      }
+
+      this.isPlaying = true;
+      this.startTime = Date.now();
+      this.beatCount = 0;
+
+      // 다음 노트 시간 계산 (AudioContext 기준)
+      // 템포 글라이드 초기화
+      this.currentTempo = this.tempo;
+      this.targetTempo = this.tempo;
+      this.tempoGlideFrom = this.tempo;
+      this.tempoGlideStartTime = this.startTime;
+
+      this.startAudioTimeSec = this.audioContext!.currentTime;
+      // 첫 박을 즉시 스케줄하기 위해 현재 시각으로 초기화
+      this.nextNoteTimeSec = this.startAudioTimeSec + 0.001;
+
+      // 애니메이션 프레임 시작
+      this.scheduleNextBeat();
+      
+      this.onPlayStateChange?.(true);
+      // console.log('메트로놈 시작 (서버 상태)');
+    } catch (error) {
+      console.error('메트로놈 시작 실패:', error);
+    } finally {
+      this.isStarting = false;
+    }
+  }
+
+  // 서버 상태로 메트로놈 정지 (WebSocket 메시지 전송 안함)
+  private stopFromServer() {
+    if (!this.isPlaying) return;
+
+    this.isPlaying = false;
+    
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
+    }
+    
+    this.beatCount = 0;
+    
+    this.onPlayStateChange?.(false);
+    // console.log('메트로놈 정지 (서버 상태)');
+  }
+
   // 다음 비트 스케줄링
   private scheduleNextBeat() {
     if (!this.isPlaying || !this.audioContext) return;
@@ -349,44 +427,58 @@ export class Metronome {
 
   // 서버에 시작 요청
   public requestStart(tempo: number = this.tempo, beats: number = this.beatsPerBar) {
-    if (!this.websocket) return;
+    if (!this.sendMessage) {
+      console.warn('sendMessage 함수가 설정되지 않았습니다.');
+      return;
+    }
     
-    this.websocket.send(JSON.stringify({
+    this.sendMessage({
       action: "startMetronome",
       tempo: tempo,
       beats: beats
-    }));
+    });
   }
 
   // 서버에 정지 요청
   public requestStop() {
-    if (!this.websocket) return;
+    if (!this.sendMessage) {
+      console.warn('sendMessage 함수가 설정되지 않았습니다.');
+      return;
+    }
     
-    this.websocket.send(JSON.stringify({
+    this.sendMessage({
       action: "stopMetronome"
-    }));
+    });
   }
 
   // 서버에 템포 변경 요청
   public requestChangeTempo(tempo: number) {
     // 로컬에서도 즉시 반영하여 체감 지연 제거
     this.applyTempoChange(tempo);
-    if (!this.websocket) return;
-    this.websocket.send(JSON.stringify({
+    if (!this.sendMessage) {
+      console.warn('sendMessage 함수가 설정되지 않았습니다.');
+      return;
+    }
+    
+    this.sendMessage({
       action: "changeTempo",
       tempo: tempo
-    }));
+    });
   }
 
   // 서버에 박자 변경 요청
   public requestChangeBeats(beats: number) {
     // 로컬 즉시 반영
     this.applyBeatsChange(beats);
-    if (!this.websocket) return;
-    this.websocket.send(JSON.stringify({
+    if (!this.sendMessage) {
+      console.warn('sendMessage 함수가 설정되지 않았습니다.');
+      return;
+    }
+    
+    this.sendMessage({
       action: "changeBeats",
       beats: beats
-    }));
+    });
   }
 
   /**

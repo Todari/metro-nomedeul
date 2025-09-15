@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { css } from "../../../styled-system/css";
 import { vstack } from "../../../styled-system/patterns";
 import { useParams } from "react-router-dom";
 import { useWebSocket } from "../../hooks/useWebSocket";
 import { CONFIG } from "../../apis/config";
 import { useMetronome } from "../../hooks/useMetronome";
+import { MetronomeState } from "../../types/model";
 import { MetronomeControls } from "../../components/MetronomeControls";
 import { SettingsBottomSheet } from "../../components/SettingsBottomSheet";
 import { ShareBottomSheet } from "../../components/ShareBottomSheet";
@@ -14,7 +15,11 @@ import { Header } from "../../components/Header";
 export const RoomPage = () => {
   const { uuid } = useParams();
   const wsUrl = useMemo(() => `${CONFIG.WS_URL}/${uuid}?userId=client-${Math.random().toString(36).slice(2)}`, [uuid]);
-  const { messages, socket } = useWebSocket(wsUrl);
+  
+  // WebSocket 메시지 핸들러를 위한 ref
+  const messageHandlerRef = useRef<((data: MetronomeState) => void) | null>(null);
+  
+  const { messages, socket, sendMessage } = useWebSocket(wsUrl, messageHandlerRef.current || undefined);
   const { 
     isPlaying, 
     tempo, 
@@ -27,8 +32,9 @@ export const RoomPage = () => {
     changeBeats, 
     tapTempo, 
     clearTapTimes, 
-    getTapCount
-  } = useMetronome(socket);
+    getTapCount,
+    handleWebSocketMessage
+  } = useMetronome(socket, sendMessage);
 
   const [localTempo, setLocalTempo] = useState(tempo);
   const [localBeats, setLocalBeats] = useState(beats);
@@ -36,6 +42,11 @@ export const RoomPage = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+
+  // WebSocket 메시지 핸들러 설정
+  useEffect(() => {
+    messageHandlerRef.current = handleWebSocketMessage;
+  }, [handleWebSocketMessage]);
 
   useEffect(() => {
     console.log(messages);

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Metronome } from '../utils/metronome';
+import { MetronomeState } from '../types/model';
 
-export const useMetronome = (websocket: WebSocket | null) => {
+export const useMetronome = (websocket: WebSocket | null, sendMessage?: (message: unknown) => void) => {
   const metronomeRef = useRef<Metronome | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [tempo, setTempo] = useState(120);
@@ -9,6 +10,14 @@ export const useMetronome = (websocket: WebSocket | null) => {
   const [currentBeat, setCurrentBeat] = useState(1);
   const [isAudioReady, setIsAudioReady] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
+
+  // WebSocket 메시지 처리
+  const handleWebSocketMessage = useCallback(async (data: MetronomeState) => {
+    if (data.type === 'metronomeState' && metronomeRef.current) {
+      // 서버에서 받은 상태를 메트로놈에 전달
+      await metronomeRef.current.handleServerState(data);
+    }
+  }, []);
 
   // 오디오 초기화 (사용자 상호작용 시)
   const initializeAudio = useCallback(async () => {
@@ -72,7 +81,8 @@ export const useMetronome = (websocket: WebSocket | null) => {
   useEffect(() => {
     if (!metronomeRef.current) return;
     metronomeRef.current.setWebSocket(websocket ?? null);
-  }, [websocket]);
+    metronomeRef.current.setSendMessage(sendMessage ?? null);
+  }, [websocket, sendMessage]);
 
   // 메트로놈 시작
   const startMetronome = useCallback(async () => {
@@ -89,15 +99,19 @@ export const useMetronome = (websocket: WebSocket | null) => {
     }
 
     try {
+      // WebSocket으로 시작 메시지 전송
+      metronomeRef.current.requestStart(tempo, beats);
       await metronomeRef.current.start();
     } catch (error) {
       console.error('메트로놈 시작 실패:', error);
     }
-  }, [isAudioReady, initializeAudio]);
+  }, [isAudioReady, initializeAudio, tempo, beats]);
 
   // 메트로놈 정지
   const stopMetronome = useCallback(() => {
     if (!metronomeRef.current) return;
+    // WebSocket으로 정지 메시지 전송
+    metronomeRef.current.requestStop();
     metronomeRef.current.stop();
   }, []);
 
@@ -149,6 +163,7 @@ export const useMetronome = (websocket: WebSocket | null) => {
     tapTempo,
     clearTapTimes,
     getTapCount,
-    initializeAudio
+    initializeAudio,
+    handleWebSocketMessage
   };
 };

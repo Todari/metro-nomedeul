@@ -12,4 +12,5 @@ export interface MetronomeState {
   startTime: number;
   serverTime: number;
   roomUuid: string;
+  type: string;
 }
