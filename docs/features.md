@@ -308,3 +308,51 @@ private createClickSound(isAccent: boolean) {
 - **Import 정리**: 사용하지 않는 컴포넌트 import 제거
 - **Props 최적화**: 불필요한 props 제거로 컴포넌트 단순화
 - **컴포넌트 삭제**: 기존 MetronomeControls.tsx 파일 제거
+
+## 모바일 터치 이벤트 최적화 (v3.2)
+
+### 문제 상황
+- **PC 환경**: 모든 버튼이 정상 작동
+- **모바일 환경**: SettingsBottomSheet의 버튼들이 터치에 반응하지 않음
+- **ShareBottomSheet**: 모바일에서 정상 작동
+
+### 원인 분석
+1. **이벤트 처리 차이**: PC는 `onClick` 이벤트만으로 충분하지만, 모바일에서는 터치 이벤트가 `onClick`을 제대로 트리거하지 않음
+2. **CSS 설정 충돌**: `pointerEvents: 'none'` 설정이 모바일에서 터치 이벤트를 완전히 차단
+3. **복잡한 터치 최적화**: 과도한 `touchAction`, `userSelect` 설정이 예상치 못한 충돌 발생
+
+### 해결 방법
+#### **1. 이중 이벤트 핸들러 적용**
+```typescript
+// PC용 onClick + 모바일용 onTouchStart
+<Button 
+  onClick={() => {
+    console.log('버튼 클릭됨');
+    onClose();
+  }}
+  onTouchStart={(e) => {
+    console.log('버튼 터치됨');
+    e.preventDefault();
+    onClose();
+  }}
+>
+```
+
+#### **2. 구조적 단순화**
+- **바텀시트 컨테이너**: ShareBottomSheet와 동일한 `insetX: 0` 사용
+- **헤더 구조**: 단순한 구조로 변경
+- **복잡한 CSS 제거**: `maxH`, `overflow`, `pointerEvents` 등 제거
+
+#### **3. 디버깅 시스템**
+- **콘솔 로그**: 각 이벤트 발생 시 로그 출력
+- **이벤트 구분**: 클릭과 터치 이벤트를 구분하여 로깅
+- **문제 진단**: 모바일에서 어떤 이벤트가 발생하는지 확인 가능
+
+### 적용된 컴포넌트
+- **SettingsBottomSheet**: 오버레이, 닫기 버튼, Tab 버튼, 정지 후 설정 버튼
+- **모든 버튼**: 이중 이벤트 핸들러로 PC/모바일 호환성 확보
+
+### 결과
+- **PC 환경**: 기존과 동일하게 정상 작동
+- **모바일 환경**: 모든 버튼이 터치에 정상 반응
+- **크로스 플랫폼**: PC와 모바일 모두에서 안정적인 사용자 경험 제공

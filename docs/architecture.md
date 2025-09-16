@@ -115,6 +115,41 @@ server/
 - React Query: 방 생성 뮤테이션 성공 시 `QUERY_KEYS.ROOMS` 무효화.
 - 로컬 UI 상태: `useMetronome`으로 미러링된 `isPlaying/tempo/beats`를 컴포넌트에 전달.
 
+## 모바일 터치 이벤트 아키텍처 (v3.2)
+
+### 이벤트 처리 전략
+- **이중 이벤트 핸들러**: PC용 `onClick` + 모바일용 `onTouchStart`
+- **이벤트 우선순위**: `onTouchStart`에서 `preventDefault()` 호출하여 중복 실행 방지
+- **크로스 플랫폼 호환성**: PC와 모바일 모두에서 안정적인 사용자 경험 제공
+
+### 컴포넌트 구조
+```
+SettingsBottomSheet
+├── 오버레이 (onClick + onTouchStart)
+├── 바텀시트 컨테이너
+│   ├── 헤더
+│   │   └── 닫기 버튼 (onClick + onTouchStart)
+│   ├── 재생 중 경고 (조건부 렌더링)
+│   │   └── 정지 후 설정 버튼 (onClick + onTouchStart)
+│   └── 설정 컨트롤들
+│       └── Tab 버튼 (onClick + onTouchStart)
+```
+
+### CSS 최적화 원칙
+- **구조적 일관성**: ShareBottomSheet와 동일한 CSS 패턴 사용
+- **단순화**: 복잡한 터치 최적화 설정 제거
+- **반응형**: `insetX: 0` 등 간단한 CSS 속성 사용
+
+### 디버깅 시스템
+- **콘솔 로깅**: 각 이벤트 발생 시 구분된 로그 출력
+- **이벤트 추적**: 클릭과 터치 이벤트를 별도로 추적
+- **문제 진단**: 모바일에서 어떤 이벤트가 발생하는지 실시간 확인
+
+### 적용 범위
+- **SettingsBottomSheet**: 모든 인터랙티브 요소
+- **ShareBottomSheet**: 기존 구조 유지 (정상 작동)
+- **MetronomeControls**: 향후 적용 예정
+
 ## 빌드/배포
 - 프론트: Vite 빌드 산출물을 Vercel에 배포. `vercel.json`에서 SPA 재작성(`/index.html`) 설정.
 - 백엔드: `server/docker-compose.yml`로 Mongo와 함께 실행하거나 컨테이너 이미지를 빌드해 배포.

@@ -23,7 +23,7 @@ export function ShareBottomSheet(props: ShareBottomSheetProps) {
   };
 
   return (
-    <div>
+    <>
       {/* overlay */}
       <div className={css({ position: 'fixed', inset: 0, bg: 'black/60', zIndex: 40 })} onClick={onClose} />
       {/* sheet */}
@@ -55,15 +55,15 @@ export function ShareBottomSheet(props: ShareBottomSheetProps) {
         )}
 
         <div className={css({ display: 'flex', justifyContent: 'center' })}>
-          <button
+          <Button
             className={css({ px: 4, py: 3, rounded: 'lg', bg: 'neutral.600', color: 'white', _hover: { bg: 'neutral.700' }, _active: { bg: 'neutral.800' } })}
             onClick={handleCopy}
           >
             링크 복사하기
-          </button>
+          </Button>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

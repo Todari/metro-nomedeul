@@ -34,48 +34,23 @@ export function SettingsBottomSheet(props: SettingsBottomSheetProps) {
     <>
       {/* 오버레이 */}
       <div 
-        className={css({
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          bg: 'black',
-          opacity: 0.5,
-          zIndex: 40
-        })}
-        onClick={onClose}
+        className={css({ position: 'fixed', inset: 0, bg: 'black/60', zIndex: 40 })}
+        onClick={() => {
+          console.log('오버레이 클릭됨');
+          onClose();
+        }}
+        onTouchStart={(e) => {
+          console.log('오버레이 터치됨');
+          e.preventDefault();
+          onClose();
+        }}
       />
       
       {/* 바텀시트 */}
-      <div className={css({
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        bg: 'neutral.800',
-        borderTop: '1px solid',
-        borderColor: 'neutral.700',
-        roundedTop: '2xl',
-        p: 6,
-        zIndex: 50,
-        maxH: '80vh',
-        overflow: 'auto'
-      })}>
+      <div className={css({ position: 'fixed', insetX: 0, bottom: 0, bg: 'neutral.800', borderTop: '1px solid', borderColor: 'neutral.700', roundedTop: '2xl', p: 6, zIndex: 50 })}>
         {/* 헤더 */}
-        <div className={css({ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          mb: 6
-        })}>
-          <h2 className={css({ 
-            fontSize: 'xl', 
-            fontWeight: 'bold', 
-            color: 'white' 
-          })}>
-            메트로놈 설정
-          </h2>
+        <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 })}>
+          <div className={css({ fontWeight: 'bold', color: 'white', fontSize: 'lg' })}>메트로놈 설정</div>
           <Button
             className={css({
               p: 2,
@@ -85,7 +60,15 @@ export function SettingsBottomSheet(props: SettingsBottomSheetProps) {
               _hover: { bg: 'neutral.600' },
               _active: { bg: 'neutral.500' }
             })}
-            onClick={onClose}
+            onClick={() => {
+              console.log('닫기 버튼 클릭됨');
+              onClose();
+            }}
+            onTouchStart={(e) => {
+              console.log('닫기 버튼 터치됨');
+              e.preventDefault();
+              onClose();
+            }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -130,7 +113,7 @@ export function SettingsBottomSheet(props: SettingsBottomSheetProps) {
               <Button
                 className={css({
                   px: 4,
-                  py: 2,
+                  py: 3,
                   rounded: 'lg',
                   bg: 'orange.600',
                   color: 'white',
@@ -138,6 +121,12 @@ export function SettingsBottomSheet(props: SettingsBottomSheetProps) {
                   _active: { bg: 'orange.800' }
                 })}
                 onClick={() => {
+                  onStopForSettings();
+                  onClose();
+                }}
+                onTouchStart={(e) => {
+                  console.log('정지 후 설정 버튼 터치됨');
+                  e.preventDefault();
                   onStopForSettings();
                   onClose();
                 }}
@@ -152,8 +141,7 @@ export function SettingsBottomSheet(props: SettingsBottomSheetProps) {
         <div className={css({ 
           display: 'grid', 
           gap: 6,
-          opacity: isPlaying ? 0.5 : 1,
-          pointerEvents: isPlaying ? 'none' : 'auto'
+          opacity: isPlaying ? 0.5 : 1
         })}>
 
           {/* 탭 템포 버튼들 */}
@@ -166,11 +154,17 @@ export function SettingsBottomSheet(props: SettingsBottomSheetProps) {
                 bg: 'neutral.600', 
                 color: 'white', 
                 _hover: { bg: 'neutral.700' }, 
-                _active: { bg: 'neutral.800' },
-                fontSize: 'sm',
-                fontWeight: 'medium'
+                _active: { bg: 'neutral.800' }
               })} 
-              onClick={onTapTempo}
+              onClick={() => {
+                console.log('Tab 버튼 클릭됨');
+                onTapTempo();
+              }}
+              onTouchStart={(e) => {
+                console.log('Tab 버튼 터치됨');
+                e.preventDefault();
+                onTapTempo();
+              }}
             >
               Tab
             </Button>

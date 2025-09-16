@@ -101,6 +101,57 @@
   - 서버 상태 변경 시 WebSocket 메시지를 다시 보내지 않도록 처리
   - 오디오 초기화를 포함한 안전한 상태 변경
 
+## 모바일 터치 이벤트 문제 (v3.2 해결)
+
+### 증상
+- **PC 환경**: 모든 버튼이 정상 작동
+- **모바일 환경**: SettingsBottomSheet의 버튼들이 터치에 반응하지 않음
+- **콘솔 로그**: 모바일에서 클릭 로그가 나타나지 않음
+
+### 원인
+1. **이벤트 처리 차이**: 모바일에서는 `onClick` 이벤트가 터치에 제대로 반응하지 않음
+2. **CSS 설정 충돌**: `pointerEvents: 'none'` 설정이 터치 이벤트를 차단
+3. **복잡한 터치 최적화**: 과도한 CSS 설정이 예상치 못한 충돌 발생
+
+### 해결 방법
+#### **1. 이중 이벤트 핸들러 적용**
+```typescript
+// PC용 onClick + 모바일용 onTouchStart
+<Button 
+  onClick={() => {
+    console.log('버튼 클릭됨');
+    onClose();
+  }}
+  onTouchStart={(e) => {
+    console.log('버튼 터치됨');
+    e.preventDefault();
+    onClose();
+  }}
+>
+```
+
+#### **2. CSS 설정 단순화**
+```typescript
+// Before (문제)
+<div className={css({ 
+  pointerEvents: isPlaying ? 'none' : 'auto'  // ← 터치 이벤트 차단
+})}>
+
+// After (해결)
+<div className={css({ 
+  opacity: isPlaying ? 0.5 : 1  // ← 단순화
+})}>
+```
+
+#### **3. 구조적 단순화**
+- ShareBottomSheet와 동일한 구조 사용
+- 복잡한 CSS 설정 제거
+- 디버깅 로그 추가
+
+### 적용된 컴포넌트
+- **SettingsBottomSheet**: 오버레이, 닫기 버튼, Tab 버튼, 정지 후 설정 버튼
+- **모든 버튼**: 이중 이벤트 핸들러로 PC/모바일 호환성 확
+
 ## 빌드 실패
 - PandaCSS 코드젠 실패 → `npm run panda` 또는 `npm run build`
 - TypeScript 버전/타입 충돌 → `node_modules` 정리 후 재설치
