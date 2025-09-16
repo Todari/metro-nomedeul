@@ -47,24 +47,62 @@ secondsPerBeatNew := 60.0 / float64(tempo)
 newStartTime := now - int64(elapsedBeats*secondsPerBeatNew*1000.0)
 ```
 
-## 4. 사운드 미리 로딩
+## 4. Web Audio API 기반 사운드 생성
 
-### 구현 방식
-- **자동 로딩**: 방 입장 시 메트로놈 클래스 초기화와 동시에 사운드 로드
-- **파일 경로**: `/sounds/click.mp3` (일반 박자), `/sounds/accent.mp3` (강박)
-- **에러 처리**: 사운드 로드 실패 시 콘솔에 에러 로그 출력
+### 기존 문제점
+- 오디오 파일 로딩으로 인한 지연 및 네트워크 의존성
+- 파일 크기로 인한 초기 로딩 시간 증가
+- 브라우저별 오디오 파일 호환성 문제
+
+### 개선된 방식
+- **프로그래밍적 생성**: Web Audio API를 사용하여 실시간으로 사운드 생성
+- **즉시 재생**: 파일 로딩 없이 즉시 사운드 재생 가능
+- **브라우저 호환성**: 모든 모던 브라우저에서 일관된 사운드 품질
+
+### 기술적 구현
+```typescript
+// Web Audio API로 클릭 사운드 생성
+private createClickSound(isAccent: boolean) {
+  const oscillator = this.audioContext!.createOscillator();
+  const gainNode = this.audioContext!.createGain();
+  
+  // 악센트와 일반 비트 구분
+  const frequency = isAccent ? 1200 : 800; // Hz
+  
+  oscillator.frequency.setValueAtTime(frequency, this.audioContext!.currentTime);
+  oscillator.type = 'sine';
+  
+  // Attack/Decay 효과
+  gainNode.gain.setValueAtTime(0, this.audioContext!.currentTime);
+  gainNode.gain.linearRampToValueAtTime(volume, this.audioContext!.currentTime + 0.01);
+  gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext!.currentTime + 0.1);
+  
+  oscillator.connect(gainNode);
+  gainNode.connect(this.audioContext!.destination);
+  
+  oscillator.start(this.audioContext!.currentTime);
+  oscillator.stop(this.audioContext!.currentTime + 0.1);
+}
+```
 
 ### 장점
-- **즉시 재생**: 재생 버튼 클릭 시 지연 없이 바로 소리 재생
-- **사용자 경험**: 로딩 대기 시간 없이 부드러운 사용 경험
+- **즉시 재생**: 파일 로딩 없이 즉시 사운드 재생 가능
+- **네트워크 독립**: 인터넷 연결 없이도 사운드 재생
+- **일관된 품질**: 브라우저 환경에 관계없이 동일한 사운드 품질
 
-## 5. 실시간 동기화
+## 5. 고도화된 실시간 동기화
 
 ### 동기화 메커니즘
 1. **서버 시간 기준**: 서버의 `serverTime`을 기준으로 동기화
 2. **오프셋 계산**: 클라이언트와 서버 간의 시간 차이 계산
-3. **주기적 보정**: 3초마다 서버에서 동기화 신호 전송
+3. **주기적 보정**: 5초마다 서버에서 동기화 신호 전송 (안정성 향상)
 4. **박자 정확도**: 밀리초 단위의 정확한 박자 동기화
+
+### BPM 변경 시 동기화 개선
+- **서버 중심 처리**: BPM 변경을 서버에서 처리하여 모든 클라이언트에 동시 전파
+- **박자 위상 보존**: BPM 변경 시 현재 박자 위치를 정확히 유지
+- **동기화 임계값 최적화**: 200ms 이상의 차이에서만 동기화 적용 (안정성 향상)
+- **안전장치**: 2박자 이상의 큰 차이는 무시하여 네트워크 오류 방지
 
 ### WebSocket 메시지
 ```json

@@ -105,6 +105,10 @@ func (h *WebSocketHandler) HandleWebSocket(c *gin.Context) {
 				}
 				h.Service.ChangeBeats(uuid, beats)
 				
+			case "requestSync":
+				log.Println("동기화 요청 수신")
+				h.Service.BroadcastMetronomeState(uuid)
+				
 			default:
 				log.Printf("알 수 없는 액션: %s", action)
 			}

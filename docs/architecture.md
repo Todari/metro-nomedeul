@@ -20,7 +20,7 @@ App
 │  └─ components/HorizontalScrollPicker.tsx (박자 선택 UI - 가로)
 ├─ apis/room.ts (POST /room)
 ├─ utils/http.ts (axios 인스턴스)
-└─ utils/metronome.ts (오디오 스케줄링, 사운드, 동기화)
+└─ utils/metronome.ts (Web Audio API 사운드 생성, 오디오 스케줄링, 동기화)
 ```
 
 ```
@@ -81,19 +81,19 @@ server/
 
 서버 내부 흐름
 1) `startMetronome` 수신 시 방 상태 생성/갱신, 즉시 브로드캐스트
-2) 방별 ticker(기본 3초)가 주기적으로 최신 상태 재브로드캐스트(드리프트 보정)
+2) 방별 ticker(기본 5초)가 주기적으로 최신 상태 재브로드캐스트(드리프트 보정)
 3) 마지막 클라이언트가 떠나면 해당 방 상태와 ticker 정리
 
 ## 오디오 설계(utils/metronome.ts)
-- AudioContext 생성, 클릭/강박 사운드 로드(`/sounds/click.mp3`, `/sounds/accent.mp3`).
-- 서버 상태 수신 시 템포/박자/재생 상태를 반영.
-- `requestStart/Stop/ChangeTempo/ChangeBeats`로 서버에 액션 전송.
-- Tab BPM 기능: 사용자 탭 간격을 측정하여 평균 BPM 계산 (최근 4번 탭 기준).
-- 자연스러운 BPM 변경: 박자 위치를 유지하면서 간격만 조정하는 알고리즘 구현.
-- 사운드 로딩: 메트로놈 시작 시 사운드가 로드되지 않은 경우 자동으로 로딩하고 완료 후 재생.
- - Tempo Glide: 템포 변경 시 루프를 멈추지 않고 목표 BPM으로 일정 시간 동안 점진적으로 수렴
- - Beat Callback: `setOnBeat((beatIndex, beatsPerBar) => void)` 제공, UI는 이 콜백으로 엔진과 위상 동기화
- - Asset URL: `import.meta.env.BASE_URL`을 사용해 정적 경로(`/sounds/*`) 계산
+- **Web Audio API**: AudioContext 생성, 실시간 사운드 생성 (파일 로딩 불필요)
+- **사운드 생성**: `createClickSound()` 메서드로 악센트(1200Hz)와 일반(800Hz) 비트 구분
+- **서버 상태 수신**: `handleServerState`에서 템포/박자/재생 상태를 반영
+- **서버 액션 전송**: `requestStart/Stop/ChangeTempo/ChangeBeats`로 서버에 액션 전송
+- **Tab BPM 기능**: 사용자 탭 간격을 측정하여 평균 BPM 계산 (최근 4번 탭 기준)
+- **자연스러운 BPM 변경**: 박자 위치를 유지하면서 간격만 조정하는 알고리즘 구현
+- **고도화된 동기화**: 서버 중심 BPM 변경 처리, 동기화 임계값 최적화 (200ms)
+- **안전장치**: 2박자 이상의 큰 차이는 무시하여 네트워크 오류 방지
+- **Beat Callback**: `setOnBeat((beatIndex, beatsPerBar) => void)` 제공, UI는 이 콜백으로 엔진과 위상 동기화
 
 ## UI 컴포넌트 설계
 - **Header**: 상단 고정 헤더 컴포넌트

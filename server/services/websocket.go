@@ -131,8 +131,8 @@ func (s *WebSocketService) StartMetronome(roomUuid string, tempo int, beats int)
 	// 상태 브로드캐스트
 	s.BroadcastMetronomeState(roomUuid)
 	
-	// 동기화 타이머 시작 (3초마다)
-	s.startSyncTicker(roomUuid, 3*time.Second)
+	// 동기화 타이머 시작 (3초마다 - 안정적인 동기화)
+	s.startSyncTicker(roomUuid, 5*time.Second)
 }
 
 // 동기화 타이머 시작

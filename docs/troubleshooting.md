@@ -27,27 +27,48 @@
 ## 오디오가 재생되지 않음
 - 브라우저 오토플레이 정책으로 인해 사용자 제스처 필요
 - `AudioContext` 미지원 브라우저인지 확인(iOS 구버전)
-- 사운드 파일 경로 `/sounds/*.mp3` 유효성 확인
+- Web Audio API 지원 여부 확인
+
+### Web Audio API 기반 사운드 생성 (v3.0)
+- **새로운 방식**: 오디오 파일 대신 Web Audio API로 실시간 사운드 생성
+- **장점**: 파일 로딩 불필요, 네트워크 독립적, 즉시 재생 가능
+- **구현**: `createClickSound()` 메서드로 악센트(1200Hz)와 일반(800Hz) 비트 구분
 
 ### 상세 증상과 해결
 - 첫 진입 시 재생 불가
   - 원인: 초기 렌더링 단계에서 `AudioContext`가 `suspended` 상태
-  - 해결: 시작 버튼 클릭 시 `initializeAudio()`를 먼저 수행하여 `resume()` 및 사운드 로드 후 `start()` 실행
+  - 해결: 시작 버튼 클릭 시 `initializeAudio()`를 먼저 수행하여 `resume()` 후 `start()` 실행
 - 시작 버튼을 눌러도 가끔 두 번 재생됨
   - 원인: WebSocket 재연결 시 `message` 리스너가 중복으로 바인딩
   - 해결: `Metronome#setWebSocket`에서 기존 리스너 제거 후 재바인딩하도록 수정
-- ‘오디오 준비’가 한 번에 동작하지 않음 (BPM 변경 시만 동작)
-  - 원인: `metronomeRef`가 WebSocket 연결 이전에는 존재하지 않아 초기 조건 불만족
-  - 해결: 메트로놈 인스턴스를 WebSocket과 독립적으로 선생성(마운트 시 1회), WebSocket은 이후 주입
-- `decodeAudioData` 에러(null/타입 불일치)
-  - 원인: 브라우저별 Promise/Callback 차이와 초기화 타이밍 이슈
-  - 해결: 콜백/Promise 호환 래퍼로 감싸고, 디코딩 시점의 `AudioContext`를 로컬 변수로 고정해 중간 파괴/교체 감지
-  - 또한 정적 경로를 `import.meta.env.BASE_URL` 기준으로 생성(`resolveAssetUrl`)하고, `fetch(..., { cache: 'force-cache' })`로 캐시 힌트 부여
+- '오디오 초기화 실패' 오류
+  - 원인: `AudioContext` 생성 실패 또는 `suspended` 상태
+  - 해결: 재시도 로직 추가 (최대 3회), `resume()` 호출, 상태 확인
+- 사운드 파일 관련 오류 (v3.0 이전)
+  - 원인: `decodeAudioData` 에러, 브라우저별 Promise/Callback 차이
+  - 해결: Web Audio API로 대체하여 파일 의존성 제거
 
 ### 체크리스트
 - 시작 버튼 1회 클릭으로 초기화+재생이 되는가
-- 로그 순서: initialize → AudioContext 생성 → resume → click/accent 로드 → 초기화 완료 → start
+- 로그 순서: initialize → AudioContext 생성 → resume → 초기화 완료 → start
 - iOS/Safari에서 사용자 제스처(버튼 클릭) 내에서 정상 동작하는가
+
+## BPM 변경 시 클라이언트 불일치 (v3.0 해결)
+- **증상**: 재생 중 BPM을 변경하면 클라이언트 간 박자가 어긋남
+- **원인**: 로컬 즉시 반영으로 인한 타이밍 차이
+- **해결**: 서버 중심 BPM 변경 처리로 모든 클라이언트가 동시에 동기화
+  - 서버에서 박자 위상을 정확히 계산하여 브로드캐스트
+  - 클라이언트는 서버 응답을 기다린 후 동기화
+  - 동기화 임계값 최적화 (200ms 이상에서만 동기화)
+  - 안전장치: 2박자 이상의 큰 차이는 무시
+
+### 동기화 관련 문제
+- **과도한 동기화**: 동기화가 너무 자주 발생하여 박자가 어긋남
+  - 해결: 동기화 빈도를 1초 → 5초로 조정
+  - 임계값을 50ms → 200ms로 증가
+- **네트워크 지연**: 클라이언트 간 네트워크 지연으로 인한 불일치
+  - 해결: 서버에서 정확한 시작 시간 재계산
+  - 클라이언트는 서버 시간을 기준으로 동기화
 
 ## QR 스캔 실패
 - `BarcodeDetector` 지원 확인(사파리 17+/크롬 최신)
