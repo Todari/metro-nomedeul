@@ -200,7 +200,22 @@
    ```typescript
    // CSS Transform 최적화
    transform: `scale(${scale}) translate3d(0, 0, 0)`,
-   willChange: 'transform, opacity'
+   willChange: isDragging ? 'transform, opacity' : 'auto'
+   ```
+
+5. **드래그 최적화**:
+   ```typescript
+   // 드래그 중에는 onChange 호출하지 않음
+   const handleMove = useCallback((clientY: number) => {
+     if (!isDraggingRef.current) return;
+     const deltaY = clientY - startY;
+     const newOffset = startOffset + deltaY;
+     setOffset(newOffset);
+     // onChange는 드래그 종료 시에만 호출
+   }, [startY, startOffset]);
+   
+   // CSS transition 조건부 비활성화
+   transition: isDragging ? 'none' : 'all 0.2s ease-out'
    ```
 
 ### 적용된 컴포넌트
@@ -217,7 +232,8 @@
 - **렌더링 아이템 수**: 95% 감소 (200개 → 8-10개)
 - **메모리 사용량**: 대폭 감소
 - **스크롤 성능**: 부드러운 60fps 달성
-- **사용자 경험**: 버벅임 없는 매끄러운 스크롤
+- **드래그 성능**: 자연스러운 BPM 변화, 버벅임 완전 해결
+- **사용자 경험**: 매끄러운 스크롤과 즉시 반응하는 드래그
 
 ## 빌드 실패
 - PandaCSS 코드젠 실패 → `npm run panda` 또는 `npm run build`

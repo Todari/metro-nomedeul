@@ -31,7 +31,6 @@ export function ScrollPicker({
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number | undefined>(undefined);
   const isDraggingRef = useRef(false);
-  const onChangeTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   // 값 목록 생성 (역순으로 정렬) - 메모이제이션
   const values = useMemo(() => 
@@ -123,20 +122,9 @@ export function ScrollPicker({
     const newOffset = startOffset + deltaY; // 원래 방향으로 복원
     setOffset(newOffset);
 
-    // 디바운싱된 onChange 호출
-    if (onChangeTimeoutRef.current) {
-      clearTimeout(onChangeTimeoutRef.current);
-    }
-    
-    onChangeTimeoutRef.current = setTimeout(() => {
-      const idx = Math.round(-newOffset / itemHeight);
-      const clampedIdx = Math.max(0, Math.min(values.length - 1, idx));
-      const nextVal = values[clampedIdx];
-      if (nextVal !== value) {
-        onChange(nextVal);
-      }
-    }, 16); // 60fps로 제한
-  }, [startY, startOffset, itemHeight, values, value, onChange]);
+    // 드래그 중에는 onChange를 호출하지 않고, 드래그 종료 시에만 호출
+    // 이렇게 하면 드래그 중 버벅임을 방지할 수 있습니다
+  }, [startY, startOffset]);
 
   const handleEnd = useCallback(() => {
     if (!isDraggingRef.current) return;
@@ -207,14 +195,11 @@ export function ScrollPicker({
     };
   }, [handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
 
-  // 컴포넌트 언마운트 시 애니메이션 및 타이머 정리
+  // 컴포넌트 언마운트 시 애니메이션 정리
   useEffect(() => {
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
-      }
-      if (onChangeTimeoutRef.current) {
-        clearTimeout(onChangeTimeoutRef.current);
       }
     };
   }, []);
@@ -258,8 +243,9 @@ export function ScrollPicker({
           top: `${centerOffset + offset}px`,
           left: '0',
           right: '0',
-          transition: isAnimating ? 'none' : 'transform 0.1s ease-out',
-          transform: `translate3d(0, 0, 0)` // GPU 가속
+          transition: isAnimating && !isDragging ? 'transform 0.1s ease-out' : 'none',
+          transform: `translate3d(0, 0, 0)`, // GPU 가속
+          willChange: isDragging ? 'transform' : 'auto' // 드래그 중에만 willChange 활성화
         }}
       >
         {/* 상단 패딩 */}
@@ -270,8 +256,14 @@ export function ScrollPicker({
           const actualIndex = visibleRange.startIndex + relativeIndex;
           const isSelected = val === value;
           const distance = Math.abs(actualIndex - selectedIndex);
-          const opacity = Math.max(0.3, 1 - distance * 0.2);
-          const scale = Math.max(0.8, 1 - distance * 0.1);
+          
+          // 드래그 중에는 계산을 단순화
+          const opacity = isDragging ? 
+            (distance <= 1 ? 1 : 0.3) : 
+            Math.max(0.3, 1 - distance * 0.2);
+          const scale = isDragging ? 
+            (distance <= 1 ? 1 : 0.8) : 
+            Math.max(0.8, 1 - distance * 0.1);
           
           return (
             <div
@@ -286,8 +278,8 @@ export function ScrollPicker({
                 color: isSelected ? 'orange.400' : 'neutral.300',
                 opacity,
                 transform: `scale(${scale}) translate3d(0, 0, 0)`, // GPU 가속
-                transition: 'all 0.2s ease-out',
-                willChange: 'transform, opacity' // 브라우저 최적화 힌트
+                transition: isDragging ? 'none' : 'all 0.2s ease-out', // 드래그 중에는 transition 비활성화
+                willChange: isDragging ? 'transform, opacity' : 'auto' // 드래그 중에만 willChange 활성화
               })}
             >
               {val}

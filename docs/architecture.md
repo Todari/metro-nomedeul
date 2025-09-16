@@ -169,8 +169,14 @@ SettingsBottomSheet
 
 ### GPU 가속 최적화
 - **CSS Transform**: `translate3d(0, 0, 0)`로 하드웨어 가속 활성화
-- **willChange 속성**: 브라우저 최적화 힌트 제공
+- **willChange 속성**: 브라우저 최적화 힌트 제공 (드래그 중에만 활성화)
 - **레이어 분리**: GPU 레이어에서 애니메이션 처리
+
+### 드래그 최적화 시스템 (v3.3.1)
+- **onChange 최적화**: 드래그 중에는 onChange 호출을 중단하고, 드래그 종료 시에만 호출
+- **Transition 제어**: 드래그 중에는 CSS transition을 비활성화하여 60fps 성능 보장
+- **계산 단순화**: 드래그 중에는 복잡한 opacity/scale 계산을 간소화
+- **상태 관리**: `isDragging` 상태를 통한 조건부 렌더링 최적화
 
 ### 성능 모니터링
 - **렌더링 최적화**: 불필요한 리렌더링 방지

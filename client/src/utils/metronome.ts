@@ -56,12 +56,10 @@ export class Metronome {
   // 초기화 (사용자 상호작용 후 호출)
   public async initialize(): Promise<boolean> {
     if (this.isInitializing) {
-      console.warn('오디오 초기화가 이미 진행 중입니다');
       return false;
     }
     
     if (this.audioContext && this.audioContext.state === 'running') {
-      console.log('오디오가 이미 초기화되어 있습니다');
       return true;
     }
     
@@ -76,16 +74,12 @@ export class Metronome {
       }
       
       this.audioContext = new AudioContextCtor();
-      console.log('AudioContext 생성됨, 상태:', this.audioContext.state);
       
       // AudioContext가 suspended 상태인 경우 resume
       if (this.audioContext.state === 'suspended') {
-        console.log('AudioContext가 suspended 상태입니다. resume 시도...');
         try {
           await this.audioContext.resume();
-          console.log('AudioContext resume 성공, 상태:', this.audioContext.state);
         } catch (resumeError) {
-          console.error('AudioContext resume 실패:', resumeError);
           throw new Error('AudioContext resume failed: ' + resumeError);
         }
       }
@@ -97,22 +91,17 @@ export class Metronome {
 
       this.isAudioReady = true;
       this.audioInitRetryCount = 0;
-      console.log('오디오 초기화 성공');
       return true;
     } catch (error) {
-      console.error('Metronome 초기화 실패:', error);
       this.audioContext = null;
       this.isAudioReady = false;
       
       // 재시도 로직
       if (this.audioInitRetryCount < this.maxAudioInitRetries) {
         this.audioInitRetryCount++;
-        console.log(`오디오 초기화 재시도 ${this.audioInitRetryCount}/${this.maxAudioInitRetries}`);
         setTimeout(() => {
           this.initialize();
         }, 1000 * this.audioInitRetryCount); // 1초, 2초, 3초 후 재시도
-      } else {
-        console.error('오디오 초기화 최대 재시도 횟수 초과');
       }
       
       return false;
@@ -163,8 +152,7 @@ export class Metronome {
     serverTime: number;
     roomUuid: string;
   }) {
-    // 서버 상태 수신 (디버깅 로그는 과도한 스팸 방지를 위해 주석)
-    // console.log('서버 상태 수신:', state);
+    // 서버 상태 수신
 
     // 템포 업데이트 (서버에서 받은 BPM 변경을 로컬에 적용)
     if (state.tempo && state.tempo !== this.tempo) {
@@ -234,20 +222,7 @@ export class Metronome {
         this.nextNoteTimeSec = Math.max(nextBeatTimeAudio, nowAudio + 0.001);
         this.beatCount = currentBeatIndex;
         
-        console.log('서버와 동기화 (최적화):', {
-          timeDiff: timeDiff.toFixed(3),
-          syncThreshold: syncThreshold.toFixed(3),
-          maxAllowedDiff: maxAllowedDiff.toFixed(3),
-          currentBeatIndex,
-          nextNoteTimeSec: this.nextNoteTimeSec.toFixed(3),
-          serverStartTime,
-          elapsedMs: elapsedMs.toFixed(0)
-        });
-      } else {
-        console.warn('동기화 차이가 너무 큼, 무시:', {
-          timeDiff: timeDiff.toFixed(3),
-          maxAllowedDiff: maxAllowedDiff.toFixed(3)
-        });
+        // 서버와 동기화 (최적화)
       }
     }
   }
@@ -260,13 +235,12 @@ export class Metronome {
   }) {
     if (this.isPlaying || this.isStarting) return;
 
-    console.log('서버 상태로 자동 시작:', serverState);
+    // 서버 상태로 자동 시작
 
     // AudioContext만 초기화 (파일 로딩 불필요)
     if (!this.audioContext) {
       const initialized = await this.initialize();
       if (!initialized) {
-        console.error('오디오 초기화 실패로 자동 시작할 수 없습니다');
         return;
       }
     }
@@ -288,12 +262,10 @@ export class Metronome {
   }) {
     if (this.isStarting) {
       // 중복 시작 방지
-      console.warn('메트로놈 시작이 이미 진행 중입니다');
       return;
     }
 
     if (this.isPlaying) {
-      console.warn('메트로놈이 이미 재생 중입니다');
       return;
     }
 
@@ -304,7 +276,6 @@ export class Metronome {
       if (!this.audioContext) {
         const initialized = await this.initialize();
         if (!initialized) {
-          console.error('오디오 초기화 실패');
           return;
         }
       }
@@ -338,17 +309,7 @@ export class Metronome {
         const nextBeatTimeAudio = this.startAudioTimeSec + (nextBeatTimeClient - clientTime) / 1000;
         this.nextNoteTimeSec = Math.max(nextBeatTimeAudio, this.startAudioTimeSec + 0.001);
         
-        console.log('서버와 동기화된 시작:', {
-          serverStartTime: serverState.startTime,
-          serverTime: serverState.serverTime,
-          clientTime,
-          timeOffset,
-          calculatedStartTime: this.startTime,
-          elapsedMs,
-          elapsedBeats,
-          beatCount: this.beatCount,
-          nextNoteTimeSec: this.nextNoteTimeSec
-        });
+        // 서버와 동기화된 시작
       } else {
         // 일반 시작
         this.startTime = Date.now();
@@ -363,9 +324,7 @@ export class Metronome {
       this.scheduleNextBeat();
       
       this.onPlayStateChange?.(true);
-      // console.log('메트로놈 시작');
     } catch (error) {
-      console.error('메트로놈 시작 실패:', error);
     } finally {
       this.isStarting = false;
     }
@@ -385,7 +344,6 @@ export class Metronome {
     this.beatCount = 0;
     
     this.onPlayStateChange?.(false);
-    // console.log('메트로놈 정지');
   }
 
 
@@ -403,7 +361,6 @@ export class Metronome {
     this.beatCount = 0;
     
     this.onPlayStateChange?.(false);
-    // console.log('메트로놈 정지 (서버 상태)');
   }
 
   // 다음 비트 스케줄링
@@ -468,7 +425,6 @@ export class Metronome {
   // 서버에 시작 요청
   public requestStart(tempo: number = this.tempo, beats: number = this.beatsPerBar) {
     if (!this.sendMessage) {
-      console.warn('sendMessage 함수가 설정되지 않았습니다.');
       return;
     }
     
@@ -482,7 +438,6 @@ export class Metronome {
   // 서버에 정지 요청
   public requestStop() {
     if (!this.sendMessage) {
-      console.warn('sendMessage 함수가 설정되지 않았습니다.');
       return;
     }
     
@@ -493,17 +448,9 @@ export class Metronome {
 
   // 서버에 템포 변경 요청
   public requestChangeTempo(tempo: number) {
-    console.log('BPM 변경 요청:', {
-      from: this.tempo,
-      to: tempo,
-      isPlaying: this.isPlaying,
-      currentTempo: this.currentTempo
-    });
-    
     this.applyTempoChange(tempo);
     
     if (!this.sendMessage) {
-      console.warn('sendMessage 함수가 설정되지 않았습니다.');
       return;
     }
     
@@ -520,7 +467,6 @@ export class Metronome {
   public requestChangeBeats(beats: number) {
     this.applyBeatsChange(beats);
     if (!this.sendMessage) {
-      console.warn('sendMessage 함수가 설정되지 않았습니다.');
       return;
     }
     
@@ -533,7 +479,6 @@ export class Metronome {
   // 서버에 동기화 요청
   public requestSync() {
     if (!this.sendMessage) {
-      console.warn('sendMessage 함수가 설정되지 않았습니다.');
       return;
     }
     
@@ -548,20 +493,12 @@ export class Metronome {
     const oldTempo = this.tempo;
     const tempoChangeRatio = newTempo / oldTempo;
     
-    console.log('applyTempoChange 호출:', {
-      oldTempo,
-      newTempo,
-      tempoChangeRatio: tempoChangeRatio.toFixed(3),
-      isPlaying: this.isPlaying
-    });
+    // applyTempoChange 호출
     
     this.tempo = newTempo;
     this.currentTempo = newTempo;
     
-    console.log('템포 변경 완료:', {
-      tempo: this.tempo,
-      currentTempo: this.currentTempo
-    });
+    // 템포 변경 완료
     
     this.onTempoChange?.(this.tempo);
 

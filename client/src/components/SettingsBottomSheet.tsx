@@ -35,12 +35,8 @@ export function SettingsBottomSheet(props: SettingsBottomSheetProps) {
       {/* 오버레이 */}
       <div 
         className={css({ position: 'fixed', inset: 0, bg: 'black/60', zIndex: 40 })}
-        onClick={() => {
-          console.log('오버레이 클릭됨');
-          onClose();
-        }}
+        onClick={onClose}
         onTouchStart={(e) => {
-          console.log('오버레이 터치됨');
           e.preventDefault();
           onClose();
         }}
@@ -60,12 +56,8 @@ export function SettingsBottomSheet(props: SettingsBottomSheetProps) {
               _hover: { bg: 'neutral.600' },
               _active: { bg: 'neutral.500' }
             })}
-            onClick={() => {
-              console.log('닫기 버튼 클릭됨');
-              onClose();
-            }}
+            onClick={onClose}
             onTouchStart={(e) => {
-              console.log('닫기 버튼 터치됨');
               e.preventDefault();
               onClose();
             }}
@@ -125,7 +117,6 @@ export function SettingsBottomSheet(props: SettingsBottomSheetProps) {
                   onClose();
                 }}
                 onTouchStart={(e) => {
-                  console.log('정지 후 설정 버튼 터치됨');
                   e.preventDefault();
                   onStopForSettings();
                   onClose();
@@ -156,12 +147,8 @@ export function SettingsBottomSheet(props: SettingsBottomSheetProps) {
                 _hover: { bg: 'neutral.700' }, 
                 _active: { bg: 'neutral.800' }
               })} 
-              onClick={() => {
-                console.log('Tab 버튼 클릭됨');
-                onTapTempo();
-              }}
+              onClick={onTapTempo}
               onTouchStart={(e) => {
-                console.log('Tab 버튼 터치됨');
                 e.preventDefault();
                 onTapTempo();
               }}

@@ -383,8 +383,13 @@ private createClickSound(isAccent: boolean) {
 
 #### 4. GPU 가속 최적화
 - **CSS Transform**: `translate3d(0, 0, 0)`로 GPU 가속 활성화
-- **willChange 속성**: 브라우저 최적화 힌트 제공
+- **willChange 속성**: 브라우저 최적화 힌트 제공 (드래그 중에만 활성화)
 - **하드웨어 가속**: CPU 부하를 GPU로 분산
+
+#### 5. 드래그 최적화 (v3.3.1)
+- **onChange 최적화**: 드래그 중에는 onChange 호출하지 않고, 드래그 종료 시에만 호출
+- **Transition 비활성화**: 드래그 중에는 CSS transition을 비활성화하여 부드러운 움직임
+- **계산 단순화**: 드래그 중에는 opacity와 scale 계산을 단순화하여 성능 향상
 
 ### 적용된 컴포넌트
 - **ScrollPicker**: BPM 설정용 세로 스크롤 피커
@@ -394,4 +399,5 @@ private createClickSound(isAccent: boolean) {
 - **렌더링 아이템 수**: 95% 감소 (200개 → 8-10개)
 - **메모리 사용량**: 대폭 감소
 - **스크롤 성능**: 부드러운 60fps 달성
-- **사용자 경험**: 버벅임 없는 매끄러운 스크롤
+- **드래그 성능**: 버벅임 없는 자연스러운 BPM 변화
+- **사용자 경험**: 매끄러운 스크롤과 즉시 반응하는 드래그

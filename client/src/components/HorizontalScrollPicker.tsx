@@ -247,16 +247,23 @@ export function HorizontalScrollPicker({
           left: `${centerOffset + offset}px`,
           top: '0',
           bottom: '0',
-          transition: isAnimating ? 'none' : 'transform 0.1s ease-out',
+          transition: isAnimating && !isDragging ? 'transform 0.1s ease-out' : 'none',
           transform: `translate3d(0, 0, 0)`, // GPU 가속
-          display: 'flex'
+          display: 'flex',
+          willChange: isDragging ? 'transform' : 'auto' // 드래그 중에만 willChange 활성화
         }}
       >
         {values.map((val, index) => {
           const isSelected = val === value;
           const distance = Math.abs(index - selectedIndex);
-          const opacity = Math.max(0.3, 1 - distance * 0.2);
-          const scale = Math.max(0.8, 1 - distance * 0.1);
+          
+          // 드래그 중에는 계산을 단순화
+          const opacity = isDragging ? 
+            (distance <= 1 ? 1 : 0.3) : 
+            Math.max(0.3, 1 - distance * 0.2);
+          const scale = isDragging ? 
+            (distance <= 1 ? 1 : 0.8) : 
+            Math.max(0.8, 1 - distance * 0.1);
           
           return (
             <div
@@ -272,9 +279,9 @@ export function HorizontalScrollPicker({
                 color: isSelected ? 'orange.400' : 'neutral.300',
                 opacity,
                 transform: `scale(${scale}) translate3d(0, 0, 0)`, // GPU 가속
-                transition: 'all 0.2s ease-out',
+                transition: isDragging ? 'none' : 'all 0.2s ease-out', // 드래그 중에는 transition 비활성화
                 flexShrink: 0,
-                willChange: 'transform, opacity' // 브라우저 최적화 힌트
+                willChange: isDragging ? 'transform, opacity' : 'auto' // 드래그 중에만 willChange 활성화
               })}
             >
               {val}
