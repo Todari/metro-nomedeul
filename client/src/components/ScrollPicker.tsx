@@ -132,11 +132,17 @@ export function ScrollPicker({
     setIsDragging(false);
     isDraggingRef.current = false;
     
-    // 가장 가까운 값으로 스냅
+    // 정확한 중앙 정렬을 위해 가장 가까운 값으로 스냅
     const currentIndex = Math.round(-offset / itemHeight);
     const clampedIndex = Math.max(0, Math.min(values.length - 1, currentIndex));
-    snapToValue(clampedIndex);
-  }, [offset, itemHeight, values.length, snapToValue]);
+    
+    // 정확한 오프셋으로 스냅
+    const targetOffset = -clampedIndex * itemHeight;
+    setOffset(targetOffset);
+    
+    // 값 변경
+    onChange(values[clampedIndex]);
+  }, [offset, itemHeight, values, onChange]);
 
   // 마우스 이벤트
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -254,8 +260,9 @@ export function ScrollPicker({
         {/* 가시 영역의 아이템들만 렌더링 */}
         {values.slice(visibleRange.startIndex, visibleRange.endIndex + 1).map((val, relativeIndex) => {
           const actualIndex = visibleRange.startIndex + relativeIndex;
-          const isSelected = val === value;
-          const distance = Math.abs(actualIndex - selectedIndex);
+          const currentCenterIndex = Math.round(-offset / itemHeight);
+          const isSelected = actualIndex === currentCenterIndex;
+          const distance = Math.abs(actualIndex - currentCenterIndex);
           
           // 드래그 중에는 계산을 단순화
           const opacity = isDragging ? 
@@ -275,7 +282,7 @@ export function ScrollPicker({
                 justifyContent: 'center',
                 fontSize: isSelected ? 'xl' : 'lg',
                 fontWeight: isSelected ? 'bold' : 'normal',
-                color: isSelected ? 'orange.400' : 'neutral.300',
+                color: isSelected ? 'orange.400' : 'white', // 회색 대신 흰색 사용
                 opacity,
                 transform: `scale(${scale}) translate3d(0, 0, 0)`, // GPU 가속
                 transition: isDragging ? 'none' : 'all 0.2s ease-out', // 드래그 중에는 transition 비활성화

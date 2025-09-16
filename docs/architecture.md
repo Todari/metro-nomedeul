@@ -183,6 +183,27 @@ SettingsBottomSheet
 - **메모리 관리**: 가비지 컬렉션 최적화
 - **사용자 경험**: 60fps 부드러운 스크롤 달성
 
+## 스크롤 피커 중앙 정렬 시스템 (v3.3.2)
+
+### 정확한 중앙 정렬 로직
+- **실시간 중앙 계산**: `currentCenterIndex = Math.round(-offset / itemHeight)`로 정확한 중앙 인덱스 계산
+- **직접 오프셋 설정**: `snapToValue` 대신 직접 `setOffset`과 `onChange` 호출로 정밀한 제어
+- **정밀한 스냅**: 드래그 종료 시 `targetOffset = -clampedIndex * itemHeight`로 완벽한 중앙 정렬
+
+### 색상 시스템 개선
+- **색상 체계**: 선택된 값은 오렌지(`orange.400`), 선택되지 않은 값은 흰색(`white`)
+- **가독성 향상**: 회색(`neutral.300`) 대신 흰색으로 더 깔끔한 시각적 피드백
+- **일관된 색상**: 세로/가로 스크롤 피커 모두 동일한 색상 체계 적용
+
+### 실시간 선택 상태 관리
+- **동적 선택 계산**: `isSelected = actualIndex === currentCenterIndex`로 실시간 선택 상태 확인
+- **드래그 중 피드백**: 드래그 중에도 현재 중앙 값이 즉시 선택된 상태로 표시
+- **상태 동기화**: 오프셋과 선택 상태가 완벽하게 동기화
+
+### 적용된 컴포넌트
+- **ScrollPicker**: BPM 설정용 세로 스크롤 피커
+- **HorizontalScrollPicker**: 박자 설정용 가로 스크롤 피커
+
 ## 빌드/배포
 - 프론트: Vite 빌드 산출물을 Vercel에 배포. `vercel.json`에서 SPA 재작성(`/index.html`) 설정.
 - 백엔드: `server/docker-compose.yml`로 Mongo와 함께 실행하거나 컨테이너 이미지를 빌드해 배포.
