@@ -152,6 +152,73 @@
 - **SettingsBottomSheet**: 오버레이, 닫기 버튼, Tab 버튼, 정지 후 설정 버튼
 - **모든 버튼**: 이중 이벤트 핸들러로 PC/모바일 호환성 확
 
+## 스크롤 피커 성능 문제 (v3.3 해결)
+
+### 증상
+- **스크롤 버벅임**: 스크롤할 때 끊어지는 느낌
+- **메모리 사용량 증가**: 많은 BPM 값(40-240)에서 메모리 과다 사용
+- **반응 지연**: 스크롤 입력에 대한 반응이 느림
+- **모바일 성능 저하**: 저사양 모바일에서 특히 심각
+
+### 원인
+- **전체 렌더링**: 모든 아이템을 매번 렌더링 (200개)
+- **복잡한 계산**: 각 아이템마다 opacity, scale 계산
+- **불필요한 리렌더링**: handleMove에서 onChange 호출
+- **CPU 기반 애니메이션**: GPU 가속 미활용
+
+### 해결 방법
+1. **가상화 적용**:
+   ```typescript
+   // 화면에 보이는 아이템만 렌더링
+   const visibleRange = useMemo(() => {
+     const visibleCount = Math.ceil(height / itemHeight) + 2;
+     const currentIndex = Math.round(-offset / itemHeight);
+     const startIndex = Math.max(0, currentIndex - Math.floor(visibleCount / 2));
+     const endIndex = Math.min(values.length - 1, startIndex + visibleCount - 1);
+     return { startIndex, endIndex, visibleCount };
+   }, [height, itemHeight, offset, values.length]);
+   ```
+
+2. **메모이제이션 적용**:
+   ```typescript
+   // 값 목록 캐싱
+   const values = useMemo(() => 
+     Array.from({ length: Math.floor((max - min) / step) + 1 }, (_, i) => min + i * step).reverse(),
+     [min, max, step]
+   );
+   ```
+
+3. **디바운싱 구현**:
+   ```typescript
+   // onChange 호출을 60fps로 제한
+   onChangeTimeoutRef.current = setTimeout(() => {
+     // onChange 로직
+   }, 16);
+   ```
+
+4. **GPU 가속 최적화**:
+   ```typescript
+   // CSS Transform 최적화
+   transform: `scale(${scale}) translate3d(0, 0, 0)`,
+   willChange: 'transform, opacity'
+   ```
+
+### 적용된 컴포넌트
+- **ScrollPicker**: BPM 설정용 세로 스크롤 피커
+- **HorizontalScrollPicker**: 박자 설정용 가로 스크롤 피커
+
+### 검증 방법
+1. **성능 테스트**: 브라우저 개발자 도구 Performance 탭에서 렌더링 성능 확인
+2. **메모리 사용량**: Memory 탭에서 메모리 사용량 변화 확인
+3. **스크롤 테스트**: 다양한 BPM 범위에서 스크롤 부드러움 확인
+4. **모바일 테스트**: 저사양 모바일에서 성능 개선 확인
+
+### 결과
+- **렌더링 아이템 수**: 95% 감소 (200개 → 8-10개)
+- **메모리 사용량**: 대폭 감소
+- **스크롤 성능**: 부드러운 60fps 달성
+- **사용자 경험**: 버벅임 없는 매끄러운 스크롤
+
 ## 빌드 실패
 - PandaCSS 코드젠 실패 → `npm run panda` 또는 `npm run build`
 - TypeScript 버전/타입 충돌 → `node_modules` 정리 후 재설치

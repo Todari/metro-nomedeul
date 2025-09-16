@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { css } from '../../styled-system/css';
 
 interface ScrollPickerProps {
@@ -31,18 +31,32 @@ export function ScrollPicker({
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number | undefined>(undefined);
   const isDraggingRef = useRef(false);
+  const onChangeTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
-  // 값 목록 생성 (역순으로 정렬)
-  const values = Array.from(
-    { length: Math.floor((max - min) / step) + 1 },
-    (_, i) => min + i * step
-  ).reverse();
+  // 값 목록 생성 (역순으로 정렬) - 메모이제이션
+  const values = useMemo(() => 
+    Array.from(
+      { length: Math.floor((max - min) / step) + 1 },
+      (_, i) => min + i * step
+    ).reverse(),
+    [min, max, step]
+  );
 
-  // 현재 선택된 값의 인덱스
-  const selectedIndex = values.indexOf(value);
+  // 현재 선택된 값의 인덱스 - 메모이제이션
+  const selectedIndex = useMemo(() => values.indexOf(value), [values, value]);
   
-  // 중앙 정렬을 위한 오프셋 계산
-  const centerOffset = (height - itemHeight) / 2;
+  // 중앙 정렬을 위한 오프셋 계산 - 메모이제이션
+  const centerOffset = useMemo(() => (height - itemHeight) / 2, [height, itemHeight]);
+
+  // 가상화: 화면에 보이는 아이템 범위 계산
+  const visibleRange = useMemo(() => {
+    const visibleCount = Math.ceil(height / itemHeight) + 2; // 여분의 2개 추가
+    const currentIndex = Math.round(-offset / itemHeight);
+    const startIndex = Math.max(0, currentIndex - Math.floor(visibleCount / 2));
+    const endIndex = Math.min(values.length - 1, startIndex + visibleCount - 1);
+    
+    return { startIndex, endIndex, visibleCount };
+  }, [height, itemHeight, offset, values.length]);
 
   // 초기 오프셋 설정
   useEffect(() => {
@@ -109,13 +123,19 @@ export function ScrollPicker({
     const newOffset = startOffset + deltaY; // 원래 방향으로 복원
     setOffset(newOffset);
 
-    // 이동 중에도 중앙값을 실시간 반영
-    const idx = Math.round(-newOffset / itemHeight);
-    const clampedIdx = Math.max(0, Math.min(values.length - 1, idx));
-    const nextVal = values[clampedIdx];
-    if (nextVal !== value) {
-      onChange(nextVal);
+    // 디바운싱된 onChange 호출
+    if (onChangeTimeoutRef.current) {
+      clearTimeout(onChangeTimeoutRef.current);
     }
+    
+    onChangeTimeoutRef.current = setTimeout(() => {
+      const idx = Math.round(-newOffset / itemHeight);
+      const clampedIdx = Math.max(0, Math.min(values.length - 1, idx));
+      const nextVal = values[clampedIdx];
+      if (nextVal !== value) {
+        onChange(nextVal);
+      }
+    }, 16); // 60fps로 제한
   }, [startY, startOffset, itemHeight, values, value, onChange]);
 
   const handleEnd = useCallback(() => {
@@ -187,11 +207,14 @@ export function ScrollPicker({
     };
   }, [handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
 
-  // 컴포넌트 언마운트 시 애니메이션 정리
+  // 컴포넌트 언마운트 시 애니메이션 및 타이머 정리
   useEffect(() => {
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
+      }
+      if (onChangeTimeoutRef.current) {
+        clearTimeout(onChangeTimeoutRef.current);
       }
     };
   }, []);
@@ -228,19 +251,25 @@ export function ScrollPicker({
         })}
       />
       
-      {/* 값 목록 */}
+      {/* 값 목록 - 가상화 적용 */}
       <div
         style={{
           position: 'absolute',
           top: `${centerOffset + offset}px`,
           left: '0',
           right: '0',
-          transition: isAnimating ? 'none' : 'top 0.1s ease-out'
+          transition: isAnimating ? 'none' : 'transform 0.1s ease-out',
+          transform: `translate3d(0, 0, 0)` // GPU 가속
         }}
       >
-        {values.map((val, index) => {
+        {/* 상단 패딩 */}
+        <div style={{ height: `${visibleRange.startIndex * itemHeight}px` }} />
+        
+        {/* 가시 영역의 아이템들만 렌더링 */}
+        {values.slice(visibleRange.startIndex, visibleRange.endIndex + 1).map((val, relativeIndex) => {
+          const actualIndex = visibleRange.startIndex + relativeIndex;
           const isSelected = val === value;
-          const distance = Math.abs(index - selectedIndex);
+          const distance = Math.abs(actualIndex - selectedIndex);
           const opacity = Math.max(0.3, 1 - distance * 0.2);
           const scale = Math.max(0.8, 1 - distance * 0.1);
           
@@ -256,14 +285,18 @@ export function ScrollPicker({
                 fontWeight: isSelected ? 'bold' : 'normal',
                 color: isSelected ? 'orange.400' : 'neutral.300',
                 opacity,
-                transform: `scale(${scale})`,
-                transition: 'all 0.2s ease-out'
+                transform: `scale(${scale}) translate3d(0, 0, 0)`, // GPU 가속
+                transition: 'all 0.2s ease-out',
+                willChange: 'transform, opacity' // 브라우저 최적화 힌트
               })}
             >
               {val}
             </div>
           );
         })}
+        
+        {/* 하단 패딩 */}
+        <div style={{ height: `${(values.length - visibleRange.endIndex - 1) * itemHeight}px` }} />
       </div>
     </div>
   );

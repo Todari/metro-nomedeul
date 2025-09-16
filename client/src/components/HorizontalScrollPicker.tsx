@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { css } from '../../styled-system/css';
 
 interface HorizontalScrollPickerProps {
@@ -32,14 +32,17 @@ export function HorizontalScrollPicker({
   const animationRef = useRef<number | undefined>(undefined);
   const isDraggingRef = useRef(false);
 
-  // 값 목록 생성
-  const values = Array.from(
-    { length: Math.floor((max - min) / step) + 1 },
-    (_, i) => min + i * step
+  // 값 목록 생성 - 메모이제이션
+  const values = useMemo(() => 
+    Array.from(
+      { length: Math.floor((max - min) / step) + 1 },
+      (_, i) => min + i * step
+    ),
+    [min, max, step]
   );
 
-  // 현재 선택된 값의 인덱스
-  const selectedIndex = values.indexOf(value);
+  // 현재 선택된 값의 인덱스 - 메모이제이션
+  const selectedIndex = useMemo(() => values.indexOf(value), [values, value]);
   
   // 중앙 정렬을 위한 오프셋 계산 (동적으로 계산)
   const [centerOffset, setCenterOffset] = useState((width - itemWidth) / 2);
@@ -244,7 +247,8 @@ export function HorizontalScrollPicker({
           left: `${centerOffset + offset}px`,
           top: '0',
           bottom: '0',
-          transition: isAnimating ? 'none' : 'left 0.1s ease-out',
+          transition: isAnimating ? 'none' : 'transform 0.1s ease-out',
+          transform: `translate3d(0, 0, 0)`, // GPU 가속
           display: 'flex'
         }}
       >
@@ -267,9 +271,10 @@ export function HorizontalScrollPicker({
                 fontWeight: isSelected ? 'bold' : 'normal',
                 color: isSelected ? 'orange.400' : 'neutral.300',
                 opacity,
-                transform: `scale(${scale})`,
+                transform: `scale(${scale}) translate3d(0, 0, 0)`, // GPU 가속
                 transition: 'all 0.2s ease-out',
-                flexShrink: 0
+                flexShrink: 0,
+                willChange: 'transform, opacity' // 브라우저 최적화 힌트
               })}
             >
               {val}
