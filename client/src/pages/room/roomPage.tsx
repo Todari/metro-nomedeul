@@ -31,8 +31,6 @@ export const RoomPage = () => {
     changeTempo, 
     changeBeats, 
     tapTempo, 
-    clearTapTimes, 
-    getTapCount,
     handleWebSocketMessage
   } = useMetronome(socket, sendMessage);
 
@@ -71,9 +69,6 @@ export const RoomPage = () => {
     tapTempo();
   };
 
-  const handleClearTap = () => {
-    clearTapTimes();
-  };
 
   const handleSettingsClick = () => {
     setIsSettingsOpen(true);
@@ -132,6 +127,7 @@ export const RoomPage = () => {
           onStop={handleStopMetronome}
           onSettingsClick={handleSettingsClick}
           onShareClick={handleShareClick}
+          onStopForSettings={handleStopMetronome}
         />
 
         {/* 설정 바텀시트 */}
@@ -140,11 +136,11 @@ export const RoomPage = () => {
           onClose={handleCloseSettings}
           tempo={localTempo}
           beats={localBeats}
+          isPlaying={isPlaying}
           onTempoChange={(t) => { setLocalTempo(t); changeTempo(t); }}
           onBeatsChange={(b) => { setLocalBeats(b); changeBeats(b); }}
           onTapTempo={handleTapTempo}
-          onClearTap={handleClearTap}
-          tapCount={getTapCount()}
+          onStopForSettings={handleStopMetronome}
         />
 
         <ShareBottomSheet isOpen={isShareOpen} onClose={handleCloseShare} uuid={uuid} onCopied={handleCopyLink} />

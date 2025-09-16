@@ -8,11 +8,11 @@ interface SettingsBottomSheetProps {
   onClose: () => void;
   tempo: number;
   beats: number;
+  isPlaying: boolean;
   onTempoChange: (tempo: number) => void;
   onBeatsChange: (beats: number) => void;
   onTapTempo: () => void;
-  onClearTap: () => void;
-  tapCount: number;
+  onStopForSettings?: () => void;
 }
 
 export function SettingsBottomSheet(props: SettingsBottomSheetProps) {
@@ -21,9 +21,11 @@ export function SettingsBottomSheet(props: SettingsBottomSheetProps) {
     onClose, 
     tempo, 
     beats, 
+    isPlaying,
     onTempoChange, 
     onBeatsChange, 
     onTapTempo, 
+    onStopForSettings
   } = props;
 
   if (!isOpen) return null;
@@ -91,8 +93,69 @@ export function SettingsBottomSheet(props: SettingsBottomSheetProps) {
           </Button>
         </div>
 
+        {/* 재생 중 경고 메시지 */}
+        {isPlaying && (
+          <div className={css({
+            p: 4,
+            bg: 'orange.900',
+            border: '1px solid',
+            borderColor: 'orange.700',
+            rounded: 'lg',
+            mb: 4
+          })}>
+            <div className={css({
+              display: 'flex',
+              alignItems: 'center',
+              gap: 3,
+              mb: 3
+            })}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <div className={css({
+                fontWeight: 'medium',
+                color: 'orange.200'
+              })}>
+                재생 중에는 설정을 변경할 수 없습니다
+              </div>
+            </div>
+            <div className={css({
+              fontSize: 'sm',
+              color: 'orange.300',
+              mb: 3
+            })}>
+              설정을 변경하려면 메트로놈을 정지해주세요.
+            </div>
+            {onStopForSettings && (
+              <Button
+                className={css({
+                  px: 4,
+                  py: 2,
+                  rounded: 'lg',
+                  bg: 'orange.600',
+                  color: 'white',
+                  _hover: { bg: 'orange.700' },
+                  _active: { bg: 'orange.800' }
+                })}
+                onClick={() => {
+                  onStopForSettings();
+                  onClose();
+                }}
+              >
+                메트로놈 정지하고 설정 변경
+              </Button>
+            )}
+          </div>
+        )}
+
         {/* 설정 컨트롤들 */}
-        <div className={css({ display: 'grid', gap: 6 })}>
+        <div className={css({ 
+          display: 'grid', 
+          gap: 6,
+          opacity: isPlaying ? 0.5 : 1,
+          pointerEvents: isPlaying ? 'none' : 'auto'
+        })}>
+
           {/* 탭 템포 버튼들 */}
           <div className={css({ display: 'flex', gap: 3, flexWrap: 'wrap' })}>
             <Button 

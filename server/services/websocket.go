@@ -287,3 +287,57 @@ func (s *WebSocketService) ChangeBeats(roomUuid string, beats int) {
 	s.BroadcastMetronomeState(roomUuid)
 }
 
+// 템포 변경 (재생 중이면 정지 후 변경)
+func (s *WebSocketService) ChangeTempoWithStop(roomUuid string, tempo int) {
+	log.Printf("템포 변경 (정지 후): 방 %s, 새 템포 %d", roomUuid, tempo)
+	
+	s.metronomeMux.Lock()
+	state, exists := s.metronomeData[roomUuid]
+	if !exists {
+		s.metronomeMux.Unlock()
+		return
+	}
+	
+	// 재생 중이면 먼저 정지
+	if state.IsPlaying {
+		log.Printf("재생 중이므로 메트로놈 정지 후 템포 변경")
+		state.IsPlaying = false
+		s.stopSyncTicker(roomUuid)
+	}
+	
+	// 템포 업데이트
+	state.Tempo = tempo
+	state.ServerTime = time.Now().UnixMilli()
+	s.metronomeMux.Unlock()
+	
+	// 변경된 상태 브로드캐스트
+	s.BroadcastMetronomeState(roomUuid)
+}
+
+// 박자 변경 (재생 중이면 정지 후 변경)
+func (s *WebSocketService) ChangeBeatsWithStop(roomUuid string, beats int) {
+	log.Printf("박자 변경 (정지 후): 방 %s, 새 박자 %d", roomUuid, beats)
+	
+	s.metronomeMux.Lock()
+	state, exists := s.metronomeData[roomUuid]
+	if !exists {
+		s.metronomeMux.Unlock()
+		return
+	}
+	
+	// 재생 중이면 먼저 정지
+	if state.IsPlaying {
+		log.Printf("재생 중이므로 메트로놈 정지 후 박자 변경")
+		state.IsPlaying = false
+		s.stopSyncTicker(roomUuid)
+	}
+	
+	// 박자 업데이트
+	state.Beats = beats
+	state.ServerTime = time.Now().UnixMilli()
+	s.metronomeMux.Unlock()
+	
+	// 변경된 상태 브로드캐스트
+	s.BroadcastMetronomeState(roomUuid)
+}
+

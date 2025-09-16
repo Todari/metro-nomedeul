@@ -94,7 +94,7 @@ func (h *WebSocketHandler) HandleWebSocket(c *gin.Context) {
 				if t, ok := msg["tempo"].(float64); ok {
 					tempo = int(t)
 				}
-				h.Service.ChangeTempo(uuid, tempo)
+				h.Service.ChangeTempoWithStop(uuid, tempo)
 
 			case "changeBeats":
 				log.Println("박자 변경 요청 수신")
@@ -103,7 +103,7 @@ func (h *WebSocketHandler) HandleWebSocket(c *gin.Context) {
 				if b, ok := msg["beats"].(float64); ok {
 					beats = int(b)
 				}
-				h.Service.ChangeBeats(uuid, beats)
+				h.Service.ChangeBeatsWithStop(uuid, beats)
 				
 			case "requestSync":
 				log.Println("동기화 요청 수신")

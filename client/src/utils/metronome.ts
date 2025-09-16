@@ -500,7 +500,6 @@ export class Metronome {
       currentTempo: this.currentTempo
     });
     
-    // 로컬에서도 즉시 반영하여 체감 지연 제거
     this.applyTempoChange(tempo);
     
     if (!this.sendMessage) {
@@ -513,15 +512,12 @@ export class Metronome {
       tempo: tempo
     });
     
-    // BPM 변경 후 강제 동기화 요청 (서버에서 즉시 동기화 메시지 전송)
     setTimeout(() => {
       this.requestSync();
-    }, 300); // 300ms 후 동기화 요청 (안정적으로)
+    }, 300);
   }
 
-  // 서버에 박자 변경 요청
   public requestChangeBeats(beats: number) {
-    // 로컬 즉시 반영
     this.applyBeatsChange(beats);
     if (!this.sendMessage) {
       console.warn('sendMessage 함수가 설정되지 않았습니다.');
@@ -546,13 +542,9 @@ export class Metronome {
     });
   }
 
-  /**
-   * 템포 변경을 로컬에 즉시 반영 (박자 순서 유지 + 고도화된 동기화)
-   */
   private applyTempoChange(newTempo: number) {
     if (typeof newTempo !== 'number' || !isFinite(newTempo) || newTempo <= 0) return;
     
-    // 기존 템포 저장 (박자 계산용)
     const oldTempo = this.tempo;
     const tempoChangeRatio = newTempo / oldTempo;
     
@@ -563,7 +555,6 @@ export class Metronome {
       isPlaying: this.isPlaying
     });
     
-    // 템포 즉시 변경
     this.tempo = newTempo;
     this.currentTempo = newTempo;
     
@@ -575,26 +566,21 @@ export class Metronome {
     this.onTempoChange?.(this.tempo);
 
     if (this.isPlaying && this.audioContext) {
-      // 재생 중이면 현재 박자 순서를 유지하면서 다음 박자부터 새로운 템포 적용
       const now = Date.now();
       const nowAudio = this.audioContext.currentTime;
       
-      // 기존 템포로 현재까지의 박자 수 계산 (박자 순서 유지)
       const oldSecondsPerBeat = 60.0 / oldTempo;
       const elapsedMs = now - this.startTime;
       const totalBeatsElapsed = elapsedMs / (oldSecondsPerBeat * 1000);
       const currentBeatIndex = Math.floor(totalBeatsElapsed) % this.beatsPerBar;
       
-      // 다음 박자 순서 계산
       const nextBeatInSequence = Math.ceil(totalBeatsElapsed);
       
-      // 기존 박자 시간을 새로운 템포로 변환
       const oldNextBeatTimeMs = this.startTime + (nextBeatInSequence * oldSecondsPerBeat * 1000);
       const remainingMs = oldNextBeatTimeMs - now;
       const newRemainingMs = remainingMs * tempoChangeRatio;
       const nextBeatTimeAudio = nowAudio + newRemainingMs / 1000;
       
-      // 다음 박자부터 새로운 템포로 스케줄링
       this.nextNoteTimeSec = Math.max(nextBeatTimeAudio, nowAudio + 0.001);
       this.beatCount = currentBeatIndex;
       
@@ -613,55 +599,11 @@ export class Metronome {
       // BPM 변경 후 강제 동기화 요청 (안정적인 동기화)
       setTimeout(() => {
         this.requestSync();
-      }, 500); // 500ms 후 동기화 요청 (안정적으로)
+      }, 500);
     }
   }
 
-  /**
-   * 위상을 보존하며 새로운 템포로 스케줄 재계산
-   */
-  private rescheduleWithPhasePreservation(newTempo: number) {
-    if (!this.audioContext || !this.isPlaying) return;
 
-    const now = Date.now();
-    const nowAudio = this.audioContext.currentTime;
-    
-    // 현재까지 경과된 시간 계산
-    const elapsedMs = now - this.startTime;
-    const oldSecondsPerBeat = 60.0 / this.currentTempo;
-    const newSecondsPerBeat = 60.0 / newTempo;
-    
-    // 현재 비트 위치 계산 (소수점 포함)
-    const currentBeatPosition = elapsedMs / (oldSecondsPerBeat * 1000);
-    const currentBeatIndex = Math.floor(currentBeatPosition) % this.beatsPerBar;
-    
-    // 새로운 템포로 다음 비트 시간 재계산
-    const nextBeatInSequence = Math.ceil(currentBeatPosition);
-    const nextBeatTimeMs = this.startTime + (nextBeatInSequence * oldSecondsPerBeat * 1000);
-    const remainingMs = nextBeatTimeMs - now;
-    const newRemainingSec = remainingMs * (newSecondsPerBeat / oldSecondsPerBeat) / 1000;
-    
-    // 새로운 다음 비트 시간 설정
-    this.nextNoteTimeSec = nowAudio + Math.max(0.001, newRemainingSec);
-    this.beatCount = currentBeatIndex;
-    
-    // 템포 즉시 변경 (글라이드 없이)
-    this.currentTempo = newTempo;
-    
-    console.log('템포 변경으로 스케줄 재계산:', {
-      oldTempo: this.currentTempo,
-      newTempo,
-      currentBeatPosition,
-      currentBeatIndex,
-      nextBeatTimeSec: this.nextNoteTimeSec,
-      remainingMs,
-      newRemainingSec
-    });
-  }
-
-  /**
-   * 박자 수 변경을 로컬에 즉시 반영하고, 재생 중이면 비트 카운터만 정리
-   */
   private applyBeatsChange(newBeats: number) {
     if (typeof newBeats !== 'number' || !isFinite(newBeats) || newBeats <= 0) return;
     this.beatsPerBar = newBeats;

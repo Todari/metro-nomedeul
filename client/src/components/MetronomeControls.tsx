@@ -6,14 +6,16 @@ interface MetronomeControlsProps {
   tempo: number;
   beats: number;
   isInitializing: boolean;
+  serverIsPlaying?: boolean;
   onStart: () => void;
   onStop: () => void;
   onSettingsClick: () => void;
   onShareClick: () => void;
+  onStopForSettings?: () => void;
 }
 
 export function MetronomeControls(props: MetronomeControlsProps) {
-  const { isPlaying, tempo, beats, isInitializing, onStart, onStop, onSettingsClick, onShareClick } = props;
+  const { isPlaying, tempo, beats, isInitializing, serverIsPlaying, onStart, onStop, onSettingsClick, onShareClick, onStopForSettings } = props;
 
   return (
     <div className={css({ 
@@ -46,10 +48,10 @@ export function MetronomeControls(props: MetronomeControlsProps) {
             className={css({ 
               p: 3, 
               rounded: 'lg', 
-              bg: 'orange.600', 
+              bg: serverIsPlaying ? 'blue.600' : 'orange.600', 
               color: 'white', 
-              _hover: { bg: 'orange.700' }, 
-              _active: { bg: 'orange.800' },
+              _hover: { bg: serverIsPlaying ? 'blue.700' : 'orange.700' }, 
+              _active: { bg: serverIsPlaying ? 'blue.800' : 'orange.800' },
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -57,7 +59,7 @@ export function MetronomeControls(props: MetronomeControlsProps) {
               cursor: isInitializing ? 'not-allowed' : 'pointer'
             })} 
             onClick={onStart}
-            title={isInitializing ? '오디오 초기화 중...' : '시작'}
+            title={isInitializing ? '오디오 초기화 중...' : (serverIsPlaying ? '동기화하여 시작' : '시작')}
             disabled={isInitializing}
           >
             {isInitializing ? (
@@ -108,8 +110,13 @@ export function MetronomeControls(props: MetronomeControlsProps) {
             alignItems: 'center',
             justifyContent: 'center'
           })} 
-          onClick={onSettingsClick}
-          title="설정"
+          onClick={() => {
+            if (isPlaying && onStopForSettings) {
+              onStopForSettings();
+            }
+            onSettingsClick();
+          }}
+          title={isPlaying ? "설정 (재생 중 - 정지 후 설정)" : "설정"}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path 
