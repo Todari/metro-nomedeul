@@ -175,9 +175,55 @@ export class Metronome {
       await this.startFromServer(state);
     }
     
-    // 재생 중일 때도 주기적 동기화 처리 (박자 동기화) - 템포가 다를 때만
-    if (state.isPlaying && this.isPlaying && state.tempo !== this.tempo) {
-      this.syncWithServer(state);
+    // 동기화 타입에 따른 처리
+    if (state.isPlaying && this.isPlaying) {
+      if (state.type === 'beatSync') {
+        // 박자 경계 정밀 동기화
+        this.syncBeatPrecisely(state);
+      } else {
+        // 일반 동기화 (박자 동기화) - 템포가 다를 때만
+        if (state.tempo !== this.tempo) {
+          this.syncWithServer(state);
+        }
+      }
+    }
+  }
+
+  // 박자 경계 정밀 동기화 (매 박자마다 정확한 타이밍 동기화)
+  private syncBeatPrecisely(serverState: {
+    isPlaying: boolean;
+    tempo: number;
+    beats: number;
+    startTime: number;
+    serverTime: number;
+    roomUuid: string;
+  }) {
+    if (!this.audioContext) return;
+
+    const now = Date.now();
+    const nowAudio = this.audioContext.currentTime;
+    const serverStartTime = serverState.startTime;
+    
+    // 서버 기준으로 현재 박자 위치 계산
+    const elapsedMs = now - serverStartTime;
+    const secondsPerBeat = 60.0 / serverState.tempo;
+    const totalBeatsElapsed = elapsedMs / (secondsPerBeat * 1000);
+    const currentBeatIndex = Math.floor(totalBeatsElapsed) % serverState.beats;
+    
+    // 다음 박자 시간 계산 (정확한 박자 경계)
+    const nextBeatInSequence = Math.ceil(totalBeatsElapsed);
+    const nextBeatTimeMs = serverStartTime + (nextBeatInSequence * secondsPerBeat * 1000);
+    const nextBeatTimeAudio = nowAudio + (nextBeatTimeMs - now) / 1000;
+    
+    // 박자 경계 동기화 (더 엄격한 임계값)
+    const beatSyncThreshold = secondsPerBeat * 0.1; // BPM의 10% (매우 정밀)
+    const timeDiff = Math.abs(nextBeatTimeAudio - this.nextNoteTimeSec);
+    
+    if (timeDiff > beatSyncThreshold) {
+      // 박자 경계에 정확히 맞춤
+      this.nextNoteTimeSec = Math.max(nextBeatTimeAudio, nowAudio + 0.001);
+      this.beatCount = currentBeatIndex;
+      
     }
   }
 
@@ -521,17 +567,6 @@ export class Metronome {
       this.nextNoteTimeSec = Math.max(nextBeatTimeAudio, nowAudio + 0.001);
       this.beatCount = currentBeatIndex;
       
-      console.log('템포 변경 (고도화된 동기화):', {
-        oldTempo,
-        newTempo,
-        tempoChangeRatio: tempoChangeRatio.toFixed(3),
-        totalBeatsElapsed: totalBeatsElapsed.toFixed(3),
-        currentBeatIndex,
-        nextBeatInSequence,
-        remainingMs: remainingMs.toFixed(0),
-        newRemainingMs: newRemainingMs.toFixed(0),
-        nextNoteTimeSec: this.nextNoteTimeSec.toFixed(3)
-      });
       
       // BPM 변경 후 강제 동기화 요청 (안정적인 동기화)
       setTimeout(() => {

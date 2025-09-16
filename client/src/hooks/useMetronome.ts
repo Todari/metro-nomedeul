@@ -36,7 +36,6 @@ export const useMetronome = (websocket: WebSocket | null, sendMessage?: (message
       }
       return success;
     } catch (error) {
-      console.error('오디오 초기화 실패:', error);
       return false;
     } finally {
       setIsInitializing(false);
@@ -83,14 +82,12 @@ export const useMetronome = (websocket: WebSocket | null, sendMessage?: (message
   // 메트로놈 시작
   const startMetronome = useCallback(async () => {
     if (!metronomeRef.current) {
-      console.error('메트로놈이 초기화되지 않았습니다');
       return;
     }
 
     // 오디오가 준비되지 않은 경우 버튼(시작)에서 선초기화 실행
     const ok = isAudioReady ? true : await initializeAudio();
     if (!ok) {
-      console.error('오디오 초기화 실패로 메트로놈을 시작할 수 없습니다');
       return;
     }
 
@@ -99,7 +96,7 @@ export const useMetronome = (websocket: WebSocket | null, sendMessage?: (message
       metronomeRef.current.requestStart(tempo, beats);
       await metronomeRef.current.start();
     } catch (error) {
-      console.error('메트로놈 시작 실패:', error);
+      // 메트로놈 시작 실패
     }
   }, [isAudioReady, initializeAudio, tempo, beats]);
 

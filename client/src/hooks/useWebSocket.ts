@@ -65,7 +65,6 @@ export const useWebSocket = (url: string, onMessage?: (data: MetronomeState) => 
 
       ws.onopen = () => {
         backoffMs = 500; // reset
-        console.log('WebSocket connection opened');
         
         // 연결되면 큐에 있는 메시지들을 전송
         while (messageQueue.current.length > 0) {
@@ -74,7 +73,6 @@ export const useWebSocket = (url: string, onMessage?: (data: MetronomeState) => 
             try {
               ws.send(JSON.stringify(item.message));
             } catch (error) {
-              console.error('큐 메시지 전송 실패:', error);
               // 전송 실패 시 다시 큐에 추가
               messageQueue.current.unshift(item);
               break;
@@ -93,7 +91,6 @@ export const useWebSocket = (url: string, onMessage?: (data: MetronomeState) => 
       };
 
       ws.onclose = () => {
-        console.log('WebSocket connection closed');
         if (!shouldReconnect) return;
         const nextDelay = Math.min(backoffMs, 10_000);
         setTimeout(() => {
@@ -120,7 +117,6 @@ export const useWebSocket = (url: string, onMessage?: (data: MetronomeState) => 
       try {
         socket.current.send(JSON.stringify(message));
       } catch (error) {
-        console.error('메시지 전송 실패:', error);
         // 전송 실패 시 큐에 추가
         addToQueue(message);
       }

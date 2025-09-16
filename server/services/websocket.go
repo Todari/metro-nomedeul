@@ -131,20 +131,32 @@ func (s *WebSocketService) StartMetronome(roomUuid string, tempo int, beats int)
 	// 상태 브로드캐스트
 	s.BroadcastMetronomeState(roomUuid)
 	
-	// 동기화 타이머 시작 (3초마다 - 안정적인 동기화)
-	s.startSyncTicker(roomUuid, 5*time.Second)
+	// 다단계 동기화 타이머 시작
+	s.startAdvancedSyncTicker(roomUuid, tempo)
 }
 
-// 동기화 타이머 시작
-func (s *WebSocketService) startSyncTicker(roomUuid string, interval time.Duration) {
-	ticker := time.NewTicker(interval)
+
+// 고급 동기화 타이머 시작 (다단계 동기화)
+func (s *WebSocketService) startAdvancedSyncTicker(roomUuid string, tempo int) {
+	// 기존 타이머 정지
+	s.stopSyncTicker(roomUuid)
+	
+	// 박자 간격 계산 (밀리초)
+	beatInterval := int64(60000 / tempo) // 60초 / BPM
+	
+	// 1초마다 일반 동기화
+	generalTicker := time.NewTicker(1 * time.Second)
+	
+	// 박자 경계마다 정밀 동기화
+	beatTicker := time.NewTicker(time.Duration(beatInterval) * time.Millisecond)
 	
 	s.tickerMux.Lock()
-	s.syncTickers[roomUuid] = ticker
+	s.syncTickers[roomUuid] = generalTicker
 	s.tickerMux.Unlock()
 	
+	// 일반 동기화 고루틴
 	go func() {
-		for range ticker.C {
+		for range generalTicker.C {
 			s.metronomeMux.RLock()
 			state, exists := s.metronomeData[roomUuid]
 			s.metronomeMux.RUnlock()
@@ -154,10 +166,60 @@ func (s *WebSocketService) startSyncTicker(roomUuid string, interval time.Durati
 				return
 			}
 			
-			// 동기화 신호 전송
+			// 일반 동기화 신호 전송
 			s.BroadcastMetronomeState(roomUuid)
 		}
 	}()
+	
+	// 박자 경계 동기화 고루틴
+	go func() {
+		for range beatTicker.C {
+			s.metronomeMux.RLock()
+			state, exists := s.metronomeData[roomUuid]
+			s.metronomeMux.RUnlock()
+			
+			if !exists || !state.IsPlaying {
+				beatTicker.Stop()
+				return
+			}
+			
+			// 박자 경계 정밀 동기화 신호 전송
+			s.BroadcastBeatSync(roomUuid)
+		}
+	}()
+}
+
+// 박자 경계 동기화 신호 전송
+func (s *WebSocketService) BroadcastBeatSync(roomUuid string) {
+	s.metronomeMux.RLock()
+	state, exists := s.metronomeData[roomUuid]
+	s.metronomeMux.RUnlock()
+	
+	if !exists {
+		return
+	}
+	
+	// 현재 시간으로 서버 시간 업데이트
+	now := time.Now().UnixMilli()
+	
+	beatSyncState := MetronomeState{
+		IsPlaying:  state.IsPlaying,
+		Tempo:      state.Tempo,
+		Beats:      state.Beats,
+		StartTime:  state.StartTime,
+		ServerTime: now,
+		RoomUuid:   roomUuid,
+		Type:       "beatSync", // 박자 동기화 신호임을 표시
+	}
+	
+	// 해당 방의 모든 클라이언트에게 전송
+	s.clientsMux.RLock()
+	for client := range s.clients {
+		if client.RoomUuid == roomUuid {
+			client.Conn.WriteJSON(beatSyncState)
+		}
+	}
+	s.clientsMux.RUnlock()
 }
 
 // 동기화 타이머 정지
