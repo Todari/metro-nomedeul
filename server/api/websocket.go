@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/Todari/metro-nomedeul-server/config"
 	"github.com/Todari/metro-nomedeul-server/services"
@@ -20,8 +21,9 @@ func NewWebSocketHandler(service *services.WebSocketService) *WebSocketHandler {
 }
 
 var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
+	ReadBufferSize:  4096,  // 버퍼 크기 증가
+	WriteBufferSize: 4096,  // 버퍼 크기 증가
+	HandshakeTimeout: 10 * time.Second, // 핸드셰이크 타임아웃
 	CheckOrigin: func(r *http.Request) bool {
 		origin := r.Header.Get("Origin")
 		allowed := config.GetAllowedOrigins()
@@ -56,16 +58,32 @@ func (h *WebSocketHandler) HandleWebSocket(c *gin.Context) {
 	// 새 클라이언트에게 현재 메트로놈 상태 전송
 	h.Service.SendCurrentMetronomeState(client)
 
+	// 연결 상태 모니터링을 위한 티커
+	pingTicker := time.NewTicker(30 * time.Second)
+	defer pingTicker.Stop()
+
+	// 메시지 처리 루프
 	for {
-		var msg map[string]interface{}
-		err := conn.ReadJSON(&msg)
-		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Println("읽기 오류:", err)
+		select {
+		case <-pingTicker.C:
+			// 핑 메시지 전송으로 연결 상태 확인
+			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				log.Printf("핑 메시지 전송 실패: %v", err)
+				h.Service.RemoveClient(client)
+				return
 			}
-			h.Service.RemoveClient(client)
-			break
-		}
+		default:
+			// 메시지 읽기 (타임아웃 설정)
+			conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+			var msg map[string]interface{}
+			err := conn.ReadJSON(&msg)
+			if err != nil {
+				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+					log.Printf("WebSocket 읽기 오류: %v", err)
+				}
+				h.Service.RemoveClient(client)
+				return
+			}
 		
 		// 메시지 타입에 따라 처리
 		if action, ok := msg["action"].(string); ok {
@@ -112,6 +130,7 @@ func (h *WebSocketHandler) HandleWebSocket(c *gin.Context) {
 			default:
 				log.Printf("알 수 없는 액션: %s", action)
 			}
+		}
 		}
 	}
 }

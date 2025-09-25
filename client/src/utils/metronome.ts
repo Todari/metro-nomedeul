@@ -92,7 +92,7 @@ export class Metronome {
       this.isAudioReady = true;
       this.audioInitRetryCount = 0;
       return true;
-    } catch (error) {
+    } catch {
       this.audioContext = null;
       this.isAudioReady = false;
       
@@ -123,7 +123,7 @@ export class Metronome {
     this.wsMessageHandler = (event: MessageEvent<string>) => {
       try {
         const data = JSON.parse(event.data);
-        if (data.type === 'metronomeState') {
+        if (data && (data.type === 'metronomeState' || data.type === 'beatSync')) {
           this.handleServerState(data);
         }
       } catch (error) {
@@ -370,7 +370,8 @@ export class Metronome {
       this.scheduleNextBeat();
       
       this.onPlayStateChange?.(true);
-    } catch (error) {
+    } catch {
+      // no-op
     } finally {
       this.isStarting = false;
     }

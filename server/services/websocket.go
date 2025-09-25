@@ -49,6 +49,13 @@ func (s *WebSocketService) NewClient(userID string, roomUuid string, conn *webso
 	}
 }
 
+// 현재 연결된 클라이언트 수 반환
+func (s *WebSocketService) GetClientCount() int {
+	s.clientsMux.RLock()
+	defer s.clientsMux.RUnlock()
+	return len(s.clients)
+}
+
 func (s *WebSocketService) AddClient(client *Client) {
 	s.clientsMux.Lock()
 	defer s.clientsMux.Unlock()

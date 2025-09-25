@@ -51,7 +51,10 @@ export const useWebSocket = (url: string, onMessage?: (data: MetronomeState) => 
   }, [removeDuplicateMessages, cleanupQueue]);
 
   useEffect(() => {
-    let backoffMs = 500;
+    let backoffMs = 1000; // 1초부터 시작
+    const maxBackoffMs = 30000; // 최대 30초
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 10; // 최대 10회 시도
     let shouldReconnect = true;
     
     // 주기적으로 큐 정리 (10초마다)
@@ -60,11 +63,18 @@ export const useWebSocket = (url: string, onMessage?: (data: MetronomeState) => 
     }, 10000);
 
     function connect() {
+      // 최대 재연결 시도 횟수 초과 시 중단
+      if (reconnectAttempts >= maxReconnectAttempts) {
+        console.warn('WebSocket 최대 재연결 시도 횟수 초과. 재연결을 중단합니다.');
+        return;
+      }
+
       const ws = new WebSocket(url);
       socket.current = ws;
 
       ws.onopen = () => {
-        backoffMs = 500; // reset
+        backoffMs = 1000; // reset
+        reconnectAttempts = 0; // 성공 시 카운터 리셋
         
         // 연결되면 큐에 있는 메시지들을 전송
         while (messageQueue.current.length > 0) {
@@ -90,17 +100,30 @@ export const useWebSocket = (url: string, onMessage?: (data: MetronomeState) => 
         }
       };
 
-      ws.onclose = () => {
+      ws.onclose = (event) => {
         if (!shouldReconnect) return;
-        const nextDelay = Math.min(backoffMs, 10_000);
+        
+        // 502, 503, 504 같은 서버 오류는 더 긴 지연시간 적용
+        const isServerError = event.code === 1006 || event.code >= 5000;
+        const baseDelay = isServerError ? 5000 : backoffMs; // 서버 오류 시 5초부터 시작
+        
+        const nextDelay = Math.min(baseDelay, maxBackoffMs);
+        
+        reconnectAttempts++;
+        
         setTimeout(() => {
-          backoffMs = Math.min(backoffMs * 2, 10_000);
-          connect();
+          if (shouldReconnect && reconnectAttempts < maxReconnectAttempts) {
+            backoffMs = Math.min(backoffMs * 1.5, maxBackoffMs); // 더 부드러운 백오프
+            connect();
+          }
         }, nextDelay);
       };
 
-      ws.onerror = () => {
-        // error handled by onclose flow
+      ws.onerror = (error) => {
+        // 502 오류 등 서버 문제 시 로그 (처음 몇 번만)
+        if (reconnectAttempts < 3) {
+          console.warn('WebSocket 연결 오류:', error);
+        }
       };
     }
 

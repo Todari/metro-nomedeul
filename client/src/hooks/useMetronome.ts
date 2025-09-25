@@ -13,8 +13,8 @@ export const useMetronome = (websocket: WebSocket | null, sendMessage?: (message
 
   // WebSocket 메시지 처리
   const handleWebSocketMessage = useCallback(async (data: MetronomeState) => {
-    if (data.type === 'metronomeState' && metronomeRef.current) {
-      // 서버에서 받은 상태를 메트로놈에 전달
+    if ((data.type === 'metronomeState' || data.type === 'beatSync') && metronomeRef.current) {
+      // 서버에서 받은 상태/동기화 신호를 메트로놈에 전달
       await metronomeRef.current.handleServerState(data);
     }
   }, []);
@@ -35,7 +35,7 @@ export const useMetronome = (websocket: WebSocket | null, sendMessage?: (message
         setIsAudioReady(true);
       }
       return success;
-    } catch (error) {
+    } catch {
       return false;
     } finally {
       setIsInitializing(false);
@@ -95,7 +95,7 @@ export const useMetronome = (websocket: WebSocket | null, sendMessage?: (message
       // WebSocket으로 시작 메시지 전송
       metronomeRef.current.requestStart(tempo, beats);
       await metronomeRef.current.start();
-    } catch (error) {
+    } catch {
       // 메트로놈 시작 실패
     }
   }, [isAudioReady, initializeAudio, tempo, beats]);
