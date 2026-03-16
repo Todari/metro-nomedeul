@@ -12,6 +12,7 @@ export const useMetronome = (roomUuid: string) => {
   const [currentBeat, setCurrentBeat] = useState(1);
   const [isAudioReady, setIsAudioReady] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
+  const [audioError, setAudioError] = useState<string | null>(null);
 
   const userId = useMemo(
     () => `client-${Math.random().toString(36).slice(2)}`,
@@ -53,10 +54,20 @@ export const useMetronome = (roomUuid: string) => {
     if (isAudioReady || !metronomeRef.current || isInitializing) return false;
 
     setIsInitializing(true);
+    setAudioError(null);
     try {
       const success = await metronomeRef.current.initialize();
-      if (success) setIsAudioReady(true);
+      if (success) {
+        setIsAudioReady(true);
+      } else {
+        setAudioError(
+          '오디오를 초기화할 수 없습니다. 브라우저 설정을 확인해주세요.',
+        );
+      }
       return success;
+    } catch {
+      setAudioError('오디오 초기화 중 오류가 발생했습니다.');
+      return false;
     } finally {
       setIsInitializing(false);
     }
@@ -66,7 +77,13 @@ export const useMetronome = (roomUuid: string) => {
     if (!metronomeRef.current) return;
 
     const ok = isAudioReady || (await initializeAudio());
-    if (!ok) return;
+    if (!ok) {
+      setAudioError(
+        '오디오를 시작할 수 없습니다. 화면을 터치한 후 다시 시도해주세요.',
+      );
+      return;
+    }
+    setAudioError(null);
 
     emit(WS_EVENTS.START_METRONOME as 'startMetronome', { tempo, beats });
     await metronomeRef.current.start();
@@ -119,6 +136,7 @@ export const useMetronome = (roomUuid: string) => {
     isAudioReady,
     isInitializing,
     isConnected,
+    audioError,
     startMetronome,
     stopMetronome,
     changeTempo,

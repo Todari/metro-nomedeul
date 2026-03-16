@@ -18,6 +18,8 @@ export class Metronome {
   private readonly scheduleAheadSec = 0.05;
 
   private pendingTimers: ReturnType<typeof setTimeout>[] = [];
+  private pendingSync: { nextNoteTimeSec: number; beatCount: number } | null =
+    null;
 
   private onTempoChange: ((tempo: number) => void) | null = null;
   private onBeatsChange: ((beats: number) => void) | null = null;
@@ -66,7 +68,11 @@ export class Metronome {
       if (!this.audioContext) return false;
 
       if (this.audioContext.state === 'suspended') {
-        await this.audioContext.resume().catch(() => {});
+        try {
+          await this.audioContext.resume();
+        } catch {
+          return false;
+        }
       }
 
       this.isAudioReady = true;
@@ -134,7 +140,11 @@ export class Metronome {
     const now = Date.now();
     const nowAudio = this.audioContext.currentTime;
 
-    const elapsedMs = now - serverState.startTime;
+    // 서버에서 메시지 전송 시점의 경과 시간 + 전송 지연 보정
+    const serverElapsedMs = serverState.serverTime - serverState.startTime;
+    const transitDelayMs = now - serverState.serverTime;
+    const elapsedMs = Math.max(0, serverElapsedMs + transitDelayMs);
+
     const secondsPerBeat = 60.0 / serverState.tempo;
     const totalBeats = elapsedMs / (secondsPerBeat * 1000);
     const currentBeatIdx = Math.floor(totalBeats) % serverState.beats;
@@ -147,8 +157,10 @@ export class Metronome {
     const diff = Math.abs(nextBeatAudio - this.nextNoteTimeSec);
 
     if (diff > threshold) {
-      this.nextNoteTimeSec = Math.max(nextBeatAudio, nowAudio + 0.001);
-      this.beatCount = currentBeatIdx;
+      this.pendingSync = {
+        nextNoteTimeSec: Math.max(nextBeatAudio, nowAudio + 0.001),
+        beatCount: currentBeatIdx,
+      };
     }
   }
 
@@ -158,16 +170,17 @@ export class Metronome {
     const now = Date.now();
     const nowAudio = this.audioContext.currentTime;
 
-    const timeOffset = now - serverState.serverTime;
-    const adjustedStart = serverState.startTime + timeOffset;
+    // timeOffset 제거 - 직접 경과 시간 계산
+    const elapsedMs = now - serverState.startTime;
+    if (elapsedMs < 0) return; // 클록 스큐 안전 장치
 
-    const elapsedMs = now - adjustedStart;
     const secondsPerBeat = 60.0 / serverState.tempo;
     const totalBeats = elapsedMs / (secondsPerBeat * 1000);
     const currentBeatIdx = Math.floor(totalBeats) % serverState.beats;
 
     const nextBeat = Math.ceil(totalBeats);
-    const nextBeatMs = adjustedStart + nextBeat * secondsPerBeat * 1000;
+    const nextBeatMs =
+      serverState.startTime + nextBeat * secondsPerBeat * 1000;
     const nextBeatAudio = nowAudio + (nextBeatMs - now) / 1000;
 
     const threshold = Math.max(0.2, secondsPerBeat * 0.3);
@@ -175,8 +188,10 @@ export class Metronome {
     const maxDiff = secondsPerBeat * 2;
 
     if (diff > threshold && diff < maxDiff) {
-      this.nextNoteTimeSec = Math.max(nextBeatAudio, nowAudio + 0.001);
-      this.beatCount = currentBeatIdx;
+      this.pendingSync = {
+        nextNoteTimeSec: Math.max(nextBeatAudio, nowAudio + 0.001),
+        beatCount: currentBeatIdx,
+      };
     }
   }
 
@@ -216,8 +231,7 @@ export class Metronome {
 
       if (serverState?.isPlaying) {
         const clientTime = Date.now();
-        const timeOffset = clientTime - serverState.serverTime;
-        this.startTime = serverState.startTime + timeOffset;
+        this.startTime = serverState.startTime;
 
         if (serverState.tempo) {
           this.tempo = serverState.tempo;
@@ -261,6 +275,7 @@ export class Metronome {
     if (!this.isPlaying) return;
 
     this.isPlaying = false;
+    this.pendingSync = null;
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = null;
@@ -271,6 +286,13 @@ export class Metronome {
 
   private scheduleNextBeat() {
     if (!this.isPlaying || !this.audioContext) return;
+
+    // 동기화 메서드의 보류 상태를 원자적으로 적용
+    if (this.pendingSync) {
+      this.nextNoteTimeSec = this.pendingSync.nextNoteTimeSec;
+      this.beatCount = this.pendingSync.beatCount;
+      this.pendingSync = null;
+    }
 
     const nowAudio = this.audioContext.currentTime;
     const secondsPerBeat = 60.0 / this.tempo;
@@ -339,8 +361,10 @@ export class Metronome {
       const newRemainMs = remainMs / ratio;
       const nextAudio = nowAudio + newRemainMs / 1000;
 
-      this.nextNoteTimeSec = Math.max(nextAudio, nowAudio + 0.001);
-      this.beatCount = currentBeatIdx;
+      this.pendingSync = {
+        nextNoteTimeSec: Math.max(nextAudio, nowAudio + 0.001),
+        beatCount: currentBeatIdx,
+      };
     }
   }
 

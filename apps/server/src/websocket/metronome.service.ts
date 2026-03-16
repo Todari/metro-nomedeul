@@ -55,6 +55,17 @@ export class MetronomeService {
   }
 
   startMetronome(roomUuid: string, tempo: number, beats: number) {
+    const existing = this.metronomeStates.get(roomUuid);
+
+    // 이미 재생 중이고 타이머도 존재하면 현재 상태만 브로드캐스트
+    if (existing?.isPlaying && this.syncTimers.has(roomUuid)) {
+      this.logger.log(
+        `Metronome already playing for room=${roomUuid}, broadcasting current state`,
+      );
+      this.broadcastMetronomeState(roomUuid);
+      return;
+    }
+
     this.logger.log(
       `Start metronome: room=${roomUuid}, tempo=${tempo}, beats=${beats}`,
     );
@@ -62,7 +73,6 @@ export class MetronomeService {
     this.stopSyncTimers(roomUuid);
 
     const now = Date.now();
-    const existing = this.metronomeStates.get(roomUuid);
 
     const state: MetronomeState = {
       isPlaying: true,

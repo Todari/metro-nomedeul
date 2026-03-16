@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { css } from '../../../styled-system/css';
 import { vstack } from '../../../styled-system/patterns';
 import { useParams } from 'react-router-dom';
@@ -8,6 +8,7 @@ import { SettingsBottomSheet } from '../../components/SettingsBottomSheet';
 import { ShareBottomSheet } from '../../components/ShareBottomSheet';
 import { BeatCard } from '../../components/BeatCard';
 import { Header } from '../../components/Header';
+import { getRoom } from '../../apis/room';
 
 export const RoomPage = () => {
   const { uuid } = useParams();
@@ -19,6 +20,8 @@ export const RoomPage = () => {
     currentBeat,
     isInitializing,
     isAudioReady,
+    isConnected,
+    audioError,
     startMetronome,
     stopMetronome,
     changeTempo,
@@ -26,6 +29,50 @@ export const RoomPage = () => {
     tapTempo,
     initializeAudio,
   } = useMetronome(uuid ?? '');
+
+  // 방 존재 여부 확인
+  const [roomError, setRoomError] = useState<'not_found' | 'error' | null>(
+    null,
+  );
+  const [isRoomLoading, setIsRoomLoading] = useState(true);
+
+  useEffect(() => {
+    if (!uuid) {
+      setRoomError('not_found');
+      setIsRoomLoading(false);
+      return;
+    }
+    getRoom(uuid)
+      .then(() => setIsRoomLoading(false))
+      .catch((err) => {
+        setRoomError(err?.response?.status === 404 ? 'not_found' : 'error');
+        setIsRoomLoading(false);
+      });
+  }, [uuid]);
+
+  // 초기 로딩 시 깜빡임 방지: 2초 후부터 연결 끊김 표시
+  const [showDisconnected, setShowDisconnected] = useState(false);
+  const disconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!isConnected) {
+      disconnectTimerRef.current = setTimeout(
+        () => setShowDisconnected(true),
+        2000,
+      );
+    } else {
+      if (disconnectTimerRef.current) {
+        clearTimeout(disconnectTimerRef.current);
+        disconnectTimerRef.current = null;
+      }
+      setShowDisconnected(false);
+    }
+    return () => {
+      if (disconnectTimerRef.current) {
+        clearTimeout(disconnectTimerRef.current);
+      }
+    };
+  }, [isConnected]);
 
   useEffect(() => {
     if (isAudioReady) return;
@@ -74,9 +121,104 @@ export const RoomPage = () => {
     }
   };
 
+  if (isRoomLoading) {
+    return (
+      <div
+        className={vstack({
+          alignItems: 'center',
+          justifyContent: 'center',
+          h: '100dvh',
+          gap: 4,
+        })}
+      >
+        <div
+          className={css({
+            fontSize: 'lg',
+            color: 'neutral.400',
+          })}
+        >
+          방을 불러오는 중...
+        </div>
+      </div>
+    );
+  }
+
+  if (roomError) {
+    return (
+      <div
+        className={vstack({
+          alignItems: 'center',
+          justifyContent: 'center',
+          h: '100dvh',
+          gap: 4,
+        })}
+      >
+        <div
+          className={css({
+            fontSize: '2xl',
+            fontWeight: 'bold',
+            color: 'white',
+          })}
+        >
+          {roomError === 'not_found'
+            ? '방을 찾을 수 없습니다'
+            : '오류가 발생했습니다'}
+        </div>
+        <div className={css({ fontSize: 'md', color: 'neutral.400' })}>
+          {roomError === 'not_found'
+            ? '유효하지 않은 방 주소입니다.'
+            : '잠시 후 다시 시도해주세요.'}
+        </div>
+        <a
+          href="/"
+          className={css({
+            mt: 4,
+            px: 6,
+            py: 3,
+            bg: 'orange.600',
+            color: 'white',
+            rounded: 'lg',
+            textDecoration: 'none',
+            _hover: { bg: 'orange.700' },
+          })}
+        >
+          홈으로 돌아가기
+        </a>
+      </div>
+    );
+  }
+
   return (
     <div className={vstack({ alignItems: 'stretch', gap: 0, h: '100dvh' })}>
       <Header />
+      {showDisconnected && (
+        <div
+          className={css({
+            bg: 'red.500/90',
+            color: 'white',
+            textAlign: 'center',
+            py: 2,
+            px: 4,
+            fontSize: 'sm',
+          })}
+        >
+          연결이 끊어졌습니다. 재연결 중...
+        </div>
+      )}
+      {audioError && (
+        <div
+          className={css({
+            bg: 'orange.500/90',
+            color: 'white',
+            textAlign: 'center',
+            py: 2,
+            px: 4,
+            fontSize: 'sm',
+          })}
+        >
+          {audioError}
+        </div>
+      )}
       <div
         className={vstack({
           gap: 4,

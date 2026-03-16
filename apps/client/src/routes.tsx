@@ -1,6 +1,6 @@
-import { createBrowserRouter } from "react-router-dom";
-import App from "./App";
-import { RoomPage } from "./pages/room/roomPage";
+import { createBrowserRouter, Navigate } from 'react-router-dom';
+import App from './App';
+import { RoomPage } from './pages/room/roomPage';
 
 export const router = createBrowserRouter([
   {
@@ -10,5 +10,9 @@ export const router = createBrowserRouter([
   {
     path: '/room/:uuid',
     element: <RoomPage />,
+  },
+  {
+    path: '*',
+    element: <Navigate to="/" replace />,
   },
 ]);
