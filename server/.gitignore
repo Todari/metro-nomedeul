@@ -1,5 +1,0 @@
-.env*
-.DS_Store
-.pem
-.env.prod
-.env.dev
