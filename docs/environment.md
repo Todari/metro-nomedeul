@@ -19,7 +19,7 @@ VITE_WS_URL=ws://localhost:8080/ws
 PORT=8080
 DATABASE_URL=mongodb://localhost:27017
 DATABASE_NAME=metronomdeul
-ALLOWED_ORIGIN=http://localhost:5173,http://localhost:3000,https://metronomdeul.site
+ALLOWED_ORIGIN=http://localhost:5173,http://localhost:3000,https://metronomdeul.site,https://www.metronomdeul.site
 JWT_SECRET=<set-strong-secret>
 ```
 

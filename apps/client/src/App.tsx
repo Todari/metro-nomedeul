@@ -17,7 +17,7 @@ function App() {
   const [showScanner] = useState(false);
 
   useEffect(() => {
-    if (isSuccess) {
+    if (isSuccess && data?.uuid) {
       navigate(`/room/${data.uuid}`);
     }
   }, [isSuccess, data, navigate]);

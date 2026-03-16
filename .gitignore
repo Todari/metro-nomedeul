@@ -1,0 +1,38 @@
+# Dependencies
+node_modules
+
+# Build outputs
+dist
+dist-ssr
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Turbo
+.turbo
+
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# PandaCSS
+styled-system
+styled-system-studio
+
+# Local
+*.local

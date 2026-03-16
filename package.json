@@ -1,0 +1,17 @@
+{
+  "name": "metro-nomedeul",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "dev:client": "turbo run dev --filter=@metro-nomedeul/client",
+    "dev:server": "turbo run dev --filter=@metro-nomedeul/server",
+    "build:client": "turbo run build --filter=@metro-nomedeul/client",
+    "build:server": "turbo run build --filter=@metro-nomedeul/server"
+  },
+  "devDependencies": {
+    "turbo": "^2"
+  },
+  "packageManager": "pnpm@9.15.0"
+}

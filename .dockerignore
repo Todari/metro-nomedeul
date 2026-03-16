@@ -1,0 +1,12 @@
+node_modules
+**/node_modules
+**/dist
+**/.turbo
+.git
+.env
+.env.*
+!.env.example
+!.env.prod.example
+*.log
+apps/client/styled-system
+nginx/certbot
