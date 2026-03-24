@@ -4,7 +4,7 @@ import { css } from "../styled-system/css";
 import { container } from "../styled-system/patterns";
 import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { RouterProvider } from 'react-router';
+import { RouterProvider } from 'react-router-dom';
 import { router } from './routes.tsx';
 
 const queryClient = new QueryClient();
