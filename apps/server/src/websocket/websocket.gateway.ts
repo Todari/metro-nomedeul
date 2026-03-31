@@ -24,7 +24,6 @@ import {
 } from '@metro-nomedeul/shared';
 
 @WebSocketGateway({
-  namespace: /^\/?(ws)?$/,
   cors: {
     origin: true,
     credentials: true,
