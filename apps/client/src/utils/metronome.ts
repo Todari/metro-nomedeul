@@ -17,7 +17,6 @@ export class Metronome {
   private animationFrameId: number | null = null;
   private readonly scheduleAheadSec = 0.05;
 
-  private pendingTimers: ReturnType<typeof setTimeout>[] = [];
   private pendingSync: { nextNoteTimeSec: number; beatCount: number } | null =
     null;
   private clockOffsetRef: { current: number } = { current: 0 };
@@ -439,8 +438,6 @@ export class Metronome {
 
   public destroy() {
     this.stopInternal();
-    for (const t of this.pendingTimers) clearTimeout(t);
-    this.pendingTimers = [];
     if (this.audioContext) {
       this.audioContext.close().catch(() => {});
       this.audioContext = null;

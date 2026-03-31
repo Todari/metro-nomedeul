@@ -28,4 +28,8 @@ COPY --from=build /app/packages/shared/dist ./node_modules/@metro-nomedeul/share
 COPY --from=build /app/packages/shared/package.json ./node_modules/@metro-nomedeul/shared/
 
 EXPOSE 3000
+
+HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/health',(r)=>{process.exit(r.statusCode===200?0:1)})"
+
 CMD ["node", "dist/main"]

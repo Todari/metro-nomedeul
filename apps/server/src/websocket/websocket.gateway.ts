@@ -10,7 +10,6 @@ import {
 } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
-import { ConfigService } from '@nestjs/config';
 import { MetronomeService } from './metronome.service';
 import { RoomService } from '../room/room.service';
 import {
@@ -44,7 +43,6 @@ export class MetronomeGateway
   constructor(
     private readonly metronomeService: MetronomeService,
     private readonly roomService: RoomService,
-    private readonly configService: ConfigService,
   ) {}
 
   afterInit(server: Server) {
@@ -53,8 +51,10 @@ export class MetronomeGateway
   }
 
   async handleConnection(client: Socket) {
-    const roomUuid = client.handshake.query['roomUuid'] as string;
-    const userId = client.handshake.query['userId'] as string;
+    const rawRoomUuid = client.handshake.query['roomUuid'];
+    const rawUserId = client.handshake.query['userId'];
+    const roomUuid = Array.isArray(rawRoomUuid) ? rawRoomUuid[0] : rawRoomUuid;
+    const userId = Array.isArray(rawUserId) ? rawUserId[0] : rawUserId;
 
     if (!roomUuid) {
       this.logger.warn(`Client ${client.id} connected without roomUuid`);
@@ -65,9 +65,9 @@ export class MetronomeGateway
     // Validate room exists in DB
     try {
       await this.roomService.getRoom(roomUuid);
-    } catch {
+    } catch (error) {
       this.logger.warn(
-        `Client ${client.id} tried to join non-existent room: ${roomUuid}`,
+        `Client ${client.id} failed to join room ${roomUuid}: ${error instanceof Error ? error.message : error}`,
       );
       client.emit('error', { message: 'Room not found' });
       client.disconnect();
@@ -135,6 +135,7 @@ export class MetronomeGateway
     const roomUuid = this.clientRooms.get(client.id);
     if (!roomUuid) return;
 
+    if (!data?.tempo || typeof data.tempo !== 'number') return;
     this.metronomeService.changeTempo(roomUuid, this.clampTempo(data.tempo));
   }
 
@@ -146,6 +147,7 @@ export class MetronomeGateway
     const roomUuid = this.clientRooms.get(client.id);
     if (!roomUuid) return;
 
+    if (!data?.beats || typeof data.beats !== 'number') return;
     this.metronomeService.changeBeats(roomUuid, this.clampBeats(data.beats));
   }
 
@@ -162,6 +164,7 @@ export class MetronomeGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() data: TimeSyncRequest,
   ) {
+    if (!data?.clientSendTime || typeof data.clientSendTime !== 'number') return;
     const response: TimeSyncResponse = {
       clientSendTime: data.clientSendTime,
       serverTime: Date.now(),

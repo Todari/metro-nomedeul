@@ -36,3 +36,7 @@ styled-system-studio
 
 # Local
 *.local
+
+# Claude Code
+.claude/
+memory/

@@ -17,6 +17,8 @@ async function bootstrap() {
     credentials: true,
   });
 
+  app.enableShutdownHooks();
+
   await app.listen(port);
   console.log(`Server running on port ${port}`);
 }
