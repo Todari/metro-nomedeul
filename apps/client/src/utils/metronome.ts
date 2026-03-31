@@ -20,6 +20,7 @@ export class Metronome {
   private pendingTimers: ReturnType<typeof setTimeout>[] = [];
   private pendingSync: { nextNoteTimeSec: number; beatCount: number } | null =
     null;
+  private clockOffsetRef: { current: number } = { current: 0 };
 
   private onTempoChange: ((tempo: number) => void) | null = null;
   private onBeatsChange: ((beats: number) => void) | null = null;
@@ -140,17 +141,22 @@ export class Metronome {
     const now = Date.now();
     const nowAudio = this.audioContext.currentTime;
 
-    // 서버에서 메시지 전송 시점의 경과 시간 + 전송 지연 보정
-    const serverElapsedMs = serverState.serverTime - serverState.startTime;
-    const transitDelayMs = now - serverState.serverTime;
+    // Convert server timestamps to local time using clock offset
+    const localStartTime = this.serverToLocal(serverState.startTime);
+    const localServerTime = this.serverToLocal(serverState.serverTime);
+
+    const serverElapsedMs = localServerTime - localStartTime;
+    const transitDelayMs = now - localServerTime;
     const elapsedMs = Math.max(0, serverElapsedMs + transitDelayMs);
 
     const secondsPerBeat = 60.0 / serverState.tempo;
     const totalBeats = elapsedMs / (secondsPerBeat * 1000);
-    const currentBeatIdx = Math.floor(totalBeats) % serverState.beats;
+
+    // Use server-provided currentBeat if available
+    const currentBeatIdx = serverState.currentBeat ?? Math.floor(totalBeats) % serverState.beats;
 
     const nextBeat = Math.ceil(totalBeats);
-    const nextBeatMs = serverState.startTime + nextBeat * secondsPerBeat * 1000;
+    const nextBeatMs = localStartTime + nextBeat * secondsPerBeat * 1000;
     const nextBeatAudio = nowAudio + (nextBeatMs - now) / 1000;
 
     const threshold = secondsPerBeat * 0.1;
@@ -170,17 +176,16 @@ export class Metronome {
     const now = Date.now();
     const nowAudio = this.audioContext.currentTime;
 
-    // timeOffset 제거 - 직접 경과 시간 계산
-    const elapsedMs = now - serverState.startTime;
-    if (elapsedMs < 0) return; // 클록 스큐 안전 장치
+    const localStartTime = this.serverToLocal(serverState.startTime);
+    const elapsedMs = now - localStartTime;
+    if (elapsedMs < 0) return;
 
     const secondsPerBeat = 60.0 / serverState.tempo;
     const totalBeats = elapsedMs / (secondsPerBeat * 1000);
-    const currentBeatIdx = Math.floor(totalBeats) % serverState.beats;
+    const currentBeatIdx = serverState.currentBeat ?? Math.floor(totalBeats) % serverState.beats;
 
     const nextBeat = Math.ceil(totalBeats);
-    const nextBeatMs =
-      serverState.startTime + nextBeat * secondsPerBeat * 1000;
+    const nextBeatMs = localStartTime + nextBeat * secondsPerBeat * 1000;
     const nextBeatAudio = nowAudio + (nextBeatMs - now) / 1000;
 
     const threshold = Math.max(0.2, secondsPerBeat * 0.3);
@@ -231,7 +236,7 @@ export class Metronome {
 
       if (serverState?.isPlaying) {
         const clientTime = Date.now();
-        this.startTime = serverState.startTime;
+        this.startTime = this.serverToLocal(serverState.startTime);
 
         if (serverState.tempo) {
           this.tempo = serverState.tempo;
@@ -395,6 +400,15 @@ export class Metronome {
 
   public getTapCount(): number {
     return this.tapTimes.length;
+  }
+
+  public setClockOffsetRef(ref: { current: number }) {
+    this.clockOffsetRef = ref;
+  }
+
+  /** Convert server timestamp to local time using clock offset */
+  private serverToLocal(serverTimeMs: number): number {
+    return serverTimeMs - this.clockOffsetRef.current;
   }
 
   public setOnTempoChange(cb: (tempo: number) => void) {

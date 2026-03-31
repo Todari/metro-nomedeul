@@ -12,7 +12,7 @@ import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { ConfigService } from '@nestjs/config';
 import { MetronomeService } from './metronome.service';
-import { WS_EVENTS } from '@metro-nomedeul/shared';
+import { WS_EVENTS, TimeSyncRequest, TimeSyncResponse } from '@metro-nomedeul/shared';
 
 @WebSocketGateway({
   cors: {
@@ -127,5 +127,17 @@ export class MetronomeGateway
     if (!roomUuid) return;
 
     this.metronomeService.requestSync(roomUuid);
+  }
+
+  @SubscribeMessage(WS_EVENTS.TIME_SYNC_REQUEST)
+  handleTimeSyncRequest(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: TimeSyncRequest,
+  ) {
+    const response: TimeSyncResponse = {
+      clientSendTime: data.clientSendTime,
+      serverTime: Date.now(),
+    };
+    client.emit(WS_EVENTS.TIME_SYNC_RESPONSE, response);
   }
 }

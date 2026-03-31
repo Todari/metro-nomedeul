@@ -3,6 +3,7 @@ export const WS_EVENTS = {
   METRONOME_STATE: 'metronomeState',
   BEAT_SYNC: 'beatSync',
   INITIAL_STATE: 'initialState',
+  TIME_SYNC_RESPONSE: 'timeSyncResponse',
 
   // Client → Server
   START_METRONOME: 'startMetronome',
@@ -10,6 +11,7 @@ export const WS_EVENTS = {
   CHANGE_TEMPO: 'changeTempo',
   CHANGE_BEATS: 'changeBeats',
   REQUEST_SYNC: 'requestSync',
+  TIME_SYNC_REQUEST: 'timeSyncRequest',
 } as const;
 
 export const WS_CONFIG = {

@@ -3,9 +3,13 @@ import { io, Socket } from 'socket.io-client';
 import {
   MetronomeState,
   MetronomeActionType,
+  TimeSyncResponse,
   WS_EVENTS,
 } from '@metro-nomedeul/shared';
 import { CONFIG } from '../apis/config';
+
+const TIME_SYNC_ROUNDS = 5;
+const TIME_SYNC_INTERVAL_MS = 200;
 
 interface UseSocketOptions {
   roomUuid: string;
@@ -24,6 +28,7 @@ export const useSocket = ({
 }: UseSocketOptions) => {
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const clockOffsetRef = useRef(0);
 
   const onMetronomeStateRef = useRef(onMetronomeState);
   const onBeatSyncRef = useRef(onBeatSync);
@@ -53,8 +58,42 @@ export const useSocket = ({
 
     socketRef.current = socket;
 
+    // Time sync: measure RTT and estimate clock offset
+    const performTimeSync = () => {
+      const offsets: number[] = [];
+      let round = 0;
+
+      const sendPing = () => {
+        socket.emit(WS_EVENTS.TIME_SYNC_REQUEST, {
+          clientSendTime: Date.now(),
+        });
+      };
+
+      const onSyncResponse = (data: TimeSyncResponse) => {
+        const clientReceiveTime = Date.now();
+        const rtt = clientReceiveTime - data.clientSendTime;
+        // offset = serverTime - clientTime (positive means server is ahead)
+        const offset = data.serverTime - (data.clientSendTime + rtt / 2);
+        offsets.push(offset);
+        round++;
+
+        if (round < TIME_SYNC_ROUNDS) {
+          setTimeout(sendPing, TIME_SYNC_INTERVAL_MS);
+        } else {
+          socket.off(WS_EVENTS.TIME_SYNC_RESPONSE, onSyncResponse);
+          // Use median to filter outliers
+          offsets.sort((a, b) => a - b);
+          clockOffsetRef.current = offsets[Math.floor(offsets.length / 2)];
+        }
+      };
+
+      socket.on(WS_EVENTS.TIME_SYNC_RESPONSE, onSyncResponse);
+      sendPing();
+    };
+
     socket.on('connect', () => {
       setIsConnected(true);
+      performTimeSync();
     });
 
     socket.on('disconnect', () => {
@@ -88,5 +127,5 @@ export const useSocket = ({
     [],
   );
 
-  return { isConnected, emit };
+  return { isConnected, emit, clockOffset: clockOffsetRef };
 };

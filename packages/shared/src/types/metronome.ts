@@ -2,10 +2,20 @@ export interface MetronomeState {
   isPlaying: boolean;
   tempo: number;
   beats: number;
+  currentBeat: number;
   startTime: number;
   serverTime: number;
   roomUuid: string;
   type: MetronomeMessageType;
+}
+
+export interface TimeSyncRequest {
+  clientSendTime: number;
+}
+
+export interface TimeSyncResponse {
+  clientSendTime: number;
+  serverTime: number;
 }
 
 export type MetronomeMessageType =

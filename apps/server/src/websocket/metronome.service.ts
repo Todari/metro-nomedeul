@@ -11,7 +11,8 @@ import {
 
 interface RoomSyncTimers {
   generalTimer: ReturnType<typeof setInterval> | null;
-  beatTimer: ReturnType<typeof setInterval> | null;
+  beatTimer: ReturnType<typeof setTimeout> | null;
+  beatCount: number;
 }
 
 @Injectable()
@@ -44,6 +45,7 @@ export class MetronomeService {
           isPlaying: false,
           tempo: DEFAULT_TEMPO,
           beats: DEFAULT_BEATS,
+          currentBeat: 0,
           startTime: 0,
           serverTime: Date.now(),
           roomUuid,
@@ -78,6 +80,7 @@ export class MetronomeService {
       isPlaying: true,
       tempo: existing?.tempo ?? tempo,
       beats: existing?.beats ?? beats,
+      currentBeat: 0,
       startTime: now,
       serverTime: now,
       roomUuid,
@@ -160,13 +163,22 @@ export class MetronomeService {
     const state = this.metronomeStates.get(roomUuid);
     if (!state || !this.server) return;
 
+    const timers = this.syncTimers.get(roomUuid);
+    const currentBeat = timers ? timers.beatCount : 0;
+
     const beatSync: MetronomeState = {
       ...state,
+      currentBeat,
       serverTime: Date.now(),
       type: 'beatSync' as MetronomeMessageType,
     };
 
     this.server.to(roomUuid).emit(WS_EVENTS.BEAT_SYNC, beatSync);
+
+    // Advance beat count
+    if (timers) {
+      timers.beatCount = (timers.beatCount + 1) % state.beats;
+    }
   }
 
   private startSyncTimers(roomUuid: string, tempo: number) {
@@ -181,16 +193,41 @@ export class MetronomeService {
       }
     }, WS_CONFIG.GENERAL_SYNC_INTERVAL_MS);
 
-    const beatTimer = setInterval(() => {
-      const state = this.metronomeStates.get(roomUuid);
-      if (!state?.isPlaying) {
+    const timers: RoomSyncTimers = {
+      generalTimer,
+      beatTimer: null,
+      beatCount: 0,
+    };
+    this.syncTimers.set(roomUuid, timers);
+
+    // Self-correcting beat timer using setTimeout
+    const state = this.metronomeStates.get(roomUuid);
+    if (!state) return;
+
+    const scheduleNextBeat = (expectedTime: number) => {
+      const currentState = this.metronomeStates.get(roomUuid);
+      if (!currentState?.isPlaying) {
         this.stopSyncTimers(roomUuid);
         return;
       }
-      this.broadcastBeatSync(roomUuid);
-    }, beatIntervalMs);
 
-    this.syncTimers.set(roomUuid, { generalTimer, beatTimer });
+      this.broadcastBeatSync(roomUuid);
+
+      const nextExpected = expectedTime + beatIntervalMs;
+      const drift = Date.now() - expectedTime;
+      const delay = Math.max(1, beatIntervalMs - drift);
+
+      const currentTimers = this.syncTimers.get(roomUuid);
+      if (currentTimers) {
+        currentTimers.beatTimer = setTimeout(
+          () => scheduleNextBeat(nextExpected),
+          delay,
+        );
+      }
+    };
+
+    // Immediately send first beat, then schedule next
+    scheduleNextBeat(Date.now());
   }
 
   private stopSyncTimers(roomUuid: string) {
@@ -198,7 +235,7 @@ export class MetronomeService {
     if (!timers) return;
 
     if (timers.generalTimer) clearInterval(timers.generalTimer);
-    if (timers.beatTimer) clearInterval(timers.beatTimer);
+    if (timers.beatTimer) clearTimeout(timers.beatTimer);
 
     this.syncTimers.delete(roomUuid);
   }

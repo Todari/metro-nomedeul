@@ -23,7 +23,7 @@ export const useMetronome = (roomUuid: string) => {
     metronomeRef.current?.handleServerState(data);
   }, []);
 
-  const { isConnected, emit } = useSocket({
+  const { isConnected, emit, clockOffset } = useSocket({
     roomUuid,
     userId,
     onMetronomeState: handleServerMessage,
@@ -36,6 +36,7 @@ export const useMetronome = (roomUuid: string) => {
 
     const metronome = new Metronome();
     metronomeRef.current = metronome;
+    metronome.setClockOffsetRef(clockOffset);
 
     metronome.setOnPlayStateChange(setIsPlaying);
     metronome.setOnTempoChange(setTempo);
