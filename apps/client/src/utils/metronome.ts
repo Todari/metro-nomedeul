@@ -30,8 +30,9 @@ export class Metronome {
   private tapTimes: number[] = [];
   private readonly maxTapTimes = 4;
 
-  private lastServerStateTime = 0;
-  private readonly minStateProcessInterval = 50;
+  private lastBeatSyncTime = 0;
+  private readonly minBeatSyncInterval = 50;
+  private latestServerIsPlaying = false;
 
   constructor() {
     this.createAudioContext();
@@ -84,12 +85,17 @@ export class Metronome {
 
   public handleServerState(state: MetronomeState) {
     const isInitial = state.type === 'initialState';
+    const isBeatSync = state.type === 'beatSync';
 
-    if (!isInitial) {
+    // Only throttle beatSync messages, never throttle state changes
+    if (isBeatSync) {
       const now = Date.now();
-      if (now - this.lastServerStateTime < this.minStateProcessInterval) return;
-      this.lastServerStateTime = now;
+      if (now - this.lastBeatSyncTime < this.minBeatSyncInterval) return;
+      this.lastBeatSyncTime = now;
     }
+
+    // Track latest server play state for async start race condition
+    this.latestServerIsPlaying = state.isPlaying;
 
     if (state.tempo && state.tempo !== this.tempo) {
       this.applyTempoChange(state.tempo);
@@ -111,7 +117,8 @@ export class Metronome {
       return;
     }
 
-    if (!state.isPlaying && this.isPlaying) {
+    if (!state.isPlaying && (this.isPlaying || this.isStarting)) {
+      this.isStarting = false;
       this.stopInternal();
       return;
     }
@@ -122,7 +129,7 @@ export class Metronome {
     }
 
     if (state.isPlaying && this.isPlaying) {
-      if (state.type === 'beatSync') {
+      if (isBeatSync) {
         this.syncBeatPrecisely(state);
       } else {
         const timeDiff = Math.abs(state.startTime - this.startTime);
@@ -266,6 +273,11 @@ export class Metronome {
 
       this.scheduleNextBeat();
       this.onPlayStateChange?.(true);
+
+      // If server sent stop while we were async starting, stop immediately
+      if (!this.latestServerIsPlaying) {
+        this.stopInternal();
+      }
     } finally {
       this.isStarting = false;
     }
