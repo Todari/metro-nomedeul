@@ -247,9 +247,9 @@ export class Metronome {
         const elapsedMs = clientTime - this.startTime;
         const secondsPerBeat = 60.0 / this.tempo;
         const elapsedBeats = elapsedMs / (secondsPerBeat * 1000);
-        this.beatCount = Math.floor(elapsedBeats) % this.beatsPerBar;
 
         const nextBeat = Math.ceil(elapsedBeats);
+        this.beatCount = nextBeat % this.beatsPerBar;
         const nextBeatMs =
           this.startTime + nextBeat * secondsPerBeat * 1000;
         const nextBeatAudio =
