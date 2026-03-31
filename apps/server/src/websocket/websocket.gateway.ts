@@ -12,12 +12,30 @@ import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { ConfigService } from '@nestjs/config';
 import { MetronomeService } from './metronome.service';
-import { WS_EVENTS, TimeSyncRequest, TimeSyncResponse } from '@metro-nomedeul/shared';
+import { RoomService } from '../room/room.service';
+import {
+  WS_EVENTS,
+  TimeSyncRequest,
+  TimeSyncResponse,
+  MIN_TEMPO,
+  MAX_TEMPO,
+  MIN_BEATS,
+  MAX_BEATS,
+} from '@metro-nomedeul/shared';
 
 @WebSocketGateway({
   cors: {
-    origin: (origin: string, callback: (err: Error | null, allow?: boolean) => void) => {
-      callback(null, true);
+    origin: (
+      origin: string,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
+      // Allow connections without origin (e.g., mobile apps, server-side clients)
+      if (!origin) return callback(null, true);
+
+      const allowed = (process.env.ALLOWED_ORIGIN || 'http://localhost:5173')
+        .split(',')
+        .map((o) => o.trim());
+      callback(null, allowed.includes(origin));
     },
     credentials: true,
   },
@@ -36,6 +54,7 @@ export class MetronomeGateway
 
   constructor(
     private readonly metronomeService: MetronomeService,
+    private readonly roomService: RoomService,
     private readonly configService: ConfigService,
   ) {}
 
@@ -44,12 +63,24 @@ export class MetronomeGateway
     this.logger.log('WebSocket Gateway initialized');
   }
 
-  handleConnection(client: Socket) {
+  async handleConnection(client: Socket) {
     const roomUuid = client.handshake.query['roomUuid'] as string;
     const userId = client.handshake.query['userId'] as string;
 
     if (!roomUuid) {
       this.logger.warn(`Client ${client.id} connected without roomUuid`);
+      client.disconnect();
+      return;
+    }
+
+    // Validate room exists in DB
+    try {
+      await this.roomService.getRoom(roomUuid);
+    } catch {
+      this.logger.warn(
+        `Client ${client.id} tried to join non-existent room: ${roomUuid}`,
+      );
+      client.emit('error', { message: 'Room not found' });
       client.disconnect();
       return;
     }
@@ -78,6 +109,14 @@ export class MetronomeGateway
     }
   }
 
+  private clampTempo(tempo: number): number {
+    return Math.max(MIN_TEMPO, Math.min(MAX_TEMPO, Math.round(tempo)));
+  }
+
+  private clampBeats(beats: number): number {
+    return Math.max(MIN_BEATS, Math.min(MAX_BEATS, Math.round(beats)));
+  }
+
   @SubscribeMessage(WS_EVENTS.START_METRONOME)
   handleStartMetronome(
     @ConnectedSocket() client: Socket,
@@ -86,8 +125,8 @@ export class MetronomeGateway
     const roomUuid = this.clientRooms.get(client.id);
     if (!roomUuid) return;
 
-    const tempo = data?.tempo ?? 120;
-    const beats = data?.beats ?? 4;
+    const tempo = this.clampTempo(data?.tempo ?? 120);
+    const beats = this.clampBeats(data?.beats ?? 4);
     this.metronomeService.startMetronome(roomUuid, tempo, beats);
   }
 
@@ -107,7 +146,7 @@ export class MetronomeGateway
     const roomUuid = this.clientRooms.get(client.id);
     if (!roomUuid) return;
 
-    this.metronomeService.changeTempo(roomUuid, data.tempo);
+    this.metronomeService.changeTempo(roomUuid, this.clampTempo(data.tempo));
   }
 
   @SubscribeMessage(WS_EVENTS.CHANGE_BEATS)
@@ -118,7 +157,7 @@ export class MetronomeGateway
     const roomUuid = this.clientRooms.get(client.id);
     if (!roomUuid) return;
 
-    this.metronomeService.changeBeats(roomUuid, data.beats);
+    this.metronomeService.changeBeats(roomUuid, this.clampBeats(data.beats));
   }
 
   @SubscribeMessage(WS_EVENTS.REQUEST_SYNC)
