@@ -25,18 +25,7 @@ import {
 
 @WebSocketGateway({
   cors: {
-    origin: (
-      origin: string,
-      callback: (err: Error | null, allow?: boolean) => void,
-    ) => {
-      // Allow connections without origin (e.g., mobile apps, server-side clients)
-      if (!origin) return callback(null, true);
-
-      const allowed = (process.env.ALLOWED_ORIGIN || 'http://localhost:5173')
-        .split(',')
-        .map((o) => o.trim());
-      callback(null, allowed.includes(origin));
-    },
+    origin: true,
     credentials: true,
   },
   pingInterval: 30000,
