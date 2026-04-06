@@ -56,8 +56,35 @@ function App() {
           </div>
         </div>
 
-        
-        
+        <div
+          className={css({
+            w: 'full',
+            p: 6,
+            bg: 'neutral.800',
+            rounded: '2xl',
+          })}
+        >
+          <div className={vstack({ gap: 5, alignItems: 'flex-start' })}>
+            <h2 className={css({ fontSize: 'xl', fontWeight: 'bold', color: 'white' })}>
+              사용 방법
+            </h2>
+            <div className={vstack({ gap: 4, alignItems: 'flex-start' })}>
+              <div className={vstack({ gap: 1, alignItems: 'flex-start' })}>
+                <span className={css({ color: 'white', fontWeight: 'bold' })}>1. 방 만들기</span>
+                <span className={css({ color: 'neutral.500', fontSize: 'sm' })}>아래 버튼을 눌러 방을 만드세요</span>
+              </div>
+              <div className={vstack({ gap: 1, alignItems: 'flex-start' })}>
+                <span className={css({ color: 'white', fontWeight: 'bold' })}>2. 멤버 초대</span>
+                <span className={css({ color: 'neutral.500', fontSize: 'sm' })}>QR 코드나 링크를 공유하세요</span>
+              </div>
+              <div className={vstack({ gap: 1, alignItems: 'flex-start' })}>
+                <span className={css({ color: 'white', fontWeight: 'bold' })}>3. 함께 연주</span>
+                <span className={css({ color: 'neutral.500', fontSize: 'sm' })}>재생 버튼을 누르면 모든 기기에서 동시에 클릭이 재생됩니다</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
           <Button
             variant="primary"
             onClick={handleCreateRoom}
