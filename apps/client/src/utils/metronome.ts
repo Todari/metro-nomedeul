@@ -19,6 +19,7 @@ export class Metronome {
 
   private pendingSync: { nextNoteTimeSec: number; beatCount: number } | null =
     null;
+  private pendingServerState: MetronomeState | null = null;
   private clockOffsetRef: { current: number } = { current: 0 };
 
   private onTempoChange: ((tempo: number) => void) | null = null;
@@ -72,6 +73,10 @@ export class Metronome {
         try {
           await this.audioContext.resume();
         } catch {
+          return false;
+        }
+        // resume()이 resolve되어도 모바일에서 사용자 제스처 없으면 suspended 유지
+        if (this.audioContext.state === 'suspended') {
           return false;
         }
       }
@@ -212,13 +217,56 @@ export class Metronome {
     if (!this.audioContext) {
       await this.initialize();
     }
-    if (!this.audioContext) return;
+    if (!this.audioContext) {
+      this.pendingServerState = serverState;
+      return;
+    }
 
     if (this.audioContext.state === 'suspended') {
       await this.audioContext.resume().catch(() => {});
     }
 
+    // 모바일에서 사용자 제스처 없이 resume 실패 시, 상태만 저장
+    if (this.audioContext.state !== 'running') {
+      this.pendingServerState = serverState;
+      return;
+    }
+
+    this.pendingServerState = null;
     await this.start(serverState);
+  }
+
+  /**
+   * 사용자 제스처 후 호출하여 대기 중인 서버 상태로 재생 시작
+   */
+  public async resumeAfterGesture(): Promise<boolean> {
+    if (this.isPlaying || this.isStarting) return false;
+    if (!this.audioContext) return false;
+
+    if (this.audioContext.state === 'suspended') {
+      try {
+        await this.audioContext.resume();
+      } catch {
+        return false;
+      }
+    }
+
+    if (this.audioContext.state !== 'running') return false;
+
+    this.isAudioReady = true;
+
+    if (this.pendingServerState?.isPlaying) {
+      const state = this.pendingServerState;
+      this.pendingServerState = null;
+      await this.start(state);
+      return true;
+    }
+
+    return true;
+  }
+
+  public hasPendingPlayback(): boolean {
+    return this.pendingServerState?.isPlaying === true;
   }
 
   public async start(serverState?: MetronomeState) {

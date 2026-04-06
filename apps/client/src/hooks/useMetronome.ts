@@ -52,11 +52,23 @@ export const useMetronome = (roomUuid: string) => {
   }, []);
 
   const initializeAudio = useCallback(async () => {
-    if (isAudioReady || !metronomeRef.current || isInitializing) return false;
+    if (!metronomeRef.current || isInitializing) return false;
+
+    // 이미 오디오 준비 완료되고 대기 중인 재생도 없으면 스킵
+    if (isAudioReady && !metronomeRef.current.hasPendingPlayback()) return true;
 
     setIsInitializing(true);
     setAudioError(null);
     try {
+      // 대기 중인 서버 재생 상태가 있으면 제스처와 함께 재개
+      if (metronomeRef.current.hasPendingPlayback()) {
+        const success = await metronomeRef.current.resumeAfterGesture();
+        if (success) {
+          setIsAudioReady(true);
+          return true;
+        }
+      }
+
       const success = await metronomeRef.current.initialize();
       if (success) {
         setIsAudioReady(true);

@@ -19,7 +19,6 @@ export const RoomPage = () => {
     beats,
     currentBeat,
     isInitializing,
-    isAudioReady,
     isConnected,
     audioError,
     startMetronome,
@@ -75,16 +74,14 @@ export const RoomPage = () => {
   }, [isConnected]);
 
   useEffect(() => {
-    if (isAudioReady) return;
-
     const handleUserInteraction = () => {
       initializeAudio();
     };
 
+    // isAudioReady여도 pendingPlayback이 있을 수 있으므로 항상 리스너 유지
     const events = ['click', 'touchstart', 'keydown'] as const;
     events.forEach((event) => {
       document.addEventListener(event, handleUserInteraction, {
-        once: true,
         passive: true,
       });
     });
@@ -94,7 +91,7 @@ export const RoomPage = () => {
         document.removeEventListener(event, handleUserInteraction);
       });
     };
-  }, [initializeAudio, isAudioReady]);
+  }, [initializeAudio]);
 
   const [localTempo, setLocalTempo] = useState(tempo);
   const [localBeats, setLocalBeats] = useState(beats);
