@@ -25,7 +25,9 @@ cp nginx/nginx.init.conf nginx/nginx.conf.bak
 cp nginx/nginx.init.conf nginx/nginx.conf
 
 echo "[2/4] 서비스 시작 (HTTP mode)..."
-docker compose -f docker-compose.prod.yml up -d nginx server postgres
+docker compose -f docker-compose.prod.yml up -d db
+sleep 5
+docker compose -f docker-compose.prod.yml up -d nginx server
 
 echo "[3/4] Certbot으로 인증서 발급..."
 sleep 3
@@ -38,7 +40,6 @@ docker compose -f docker-compose.prod.yml run --rm certbot \
   -d "$DOMAIN"
 
 echo "[4/4] HTTPS Nginx 설정으로 전환..."
-# nginx.conf를 원본(HTTPS 버전)으로 복원
 mv nginx/nginx.conf.bak nginx/nginx.conf
 docker compose -f docker-compose.prod.yml restart nginx
 
