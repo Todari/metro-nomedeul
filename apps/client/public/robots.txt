@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://metronomdeul.site/sitemap.xml

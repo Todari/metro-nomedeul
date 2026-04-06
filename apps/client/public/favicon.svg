@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Metronome body -->
+  <path d="M20 56 L26 12 L38 12 L44 56 Z" fill="#e5e5e5" stroke="#a3a3a3" stroke-width="1.5"/>
+  <!-- Pendulum arm -->
+  <line x1="32" y1="50" x2="22" y2="16" stroke="#f97316" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Pendulum weight -->
+  <circle cx="24" cy="24" r="3.5" fill="#f97316"/>
+  <!-- Pivot point -->
+  <circle cx="32" cy="50" r="2.5" fill="#525252"/>
+  <!-- Scale marks -->
+  <line x1="29" y1="20" x2="35" y2="20" stroke="#a3a3a3" stroke-width="1"/>
+  <line x1="28.5" y1="28" x2="35.5" y2="28" stroke="#a3a3a3" stroke-width="1"/>
+  <line x1="28" y1="36" x2="36" y2="36" stroke="#a3a3a3" stroke-width="1"/>
+  <line x1="27.5" y1="44" x2="36.5" y2="44" stroke="#a3a3a3" stroke-width="1"/>
+</svg>
