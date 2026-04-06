@@ -94,6 +94,8 @@ export const useSocket = ({
     socket.on('connect', () => {
       setIsConnected(true);
       performTimeSync();
+      // 재연결 시 최신 메트로놈 상태 요청
+      socket.emit(WS_EVENTS.REQUEST_SYNC);
     });
 
     socket.on('disconnect', () => {

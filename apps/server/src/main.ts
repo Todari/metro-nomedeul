@@ -7,13 +7,15 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT', 3000);
-  const allowedOrigin = configService.get<string>(
-    'ALLOWED_ORIGIN',
-    'http://localhost:5173',
-  );
+  const nodeEnv = configService.get<string>('NODE_ENV', 'development');
+  const allowedOrigin = configService.get<string>('ALLOWED_ORIGIN');
+
+  if (!allowedOrigin && nodeEnv === 'production') {
+    throw new Error('ALLOWED_ORIGIN environment variable is required in production');
+  }
 
   app.enableCors({
-    origin: allowedOrigin.split(',').map((o) => o.trim()),
+    origin: (allowedOrigin || 'http://localhost:5173').split(',').map((o) => o.trim()),
     credentials: true,
   });
 

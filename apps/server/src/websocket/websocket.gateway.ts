@@ -22,9 +22,19 @@ import {
   MAX_BEATS,
 } from '@metro-nomedeul/shared';
 
+const MAX_CLIENTS_PER_ROOM = 20;
+
 @WebSocketGateway({
   cors: {
-    origin: true,
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+      const allowedOrigin = process.env.ALLOWED_ORIGIN || 'http://localhost:5173';
+      const allowedOrigins = allowedOrigin.split(',').map((o) => o.trim());
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   },
   pingInterval: 30000,
@@ -70,6 +80,17 @@ export class MetronomeGateway
         `Client ${client.id} failed to join room ${roomUuid}: ${error instanceof Error ? error.message : error}`,
       );
       client.emit('error', { message: 'Room not found' });
+      client.disconnect();
+      return;
+    }
+
+    // Check room capacity
+    const roomClients = this.server.sockets.adapter.rooms.get(roomUuid);
+    if (roomClients && roomClients.size >= MAX_CLIENTS_PER_ROOM) {
+      this.logger.warn(
+        `Room ${roomUuid} is full (${roomClients.size}/${MAX_CLIENTS_PER_ROOM})`,
+      );
+      client.emit('error', { message: 'Room is full' });
       client.disconnect();
       return;
     }

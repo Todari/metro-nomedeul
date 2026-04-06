@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import { RoomController } from './room.controller';
 import { RoomService } from './room.service';
 
@@ -15,7 +16,10 @@ describe('RoomController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [RoomController],
       providers: [{ provide: RoomService, useValue: mockRoomService }],
-    }).compile();
+    })
+      .overrideGuard(ThrottlerGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<RoomController>(RoomController);
     jest.clearAllMocks();

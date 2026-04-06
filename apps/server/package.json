@@ -25,6 +25,7 @@
     "@nestjs/platform-express": "^11",
     "@nestjs/platform-socket.io": "^11",
     "@nestjs/schedule": "^6.1.1",
+    "@nestjs/throttler": "^6.5.0",
     "@nestjs/websockets": "^11",
     "@prisma/client": "^6",
     "nanoid": "^5",

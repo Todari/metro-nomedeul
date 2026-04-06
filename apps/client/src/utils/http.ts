@@ -11,7 +11,10 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.response.use(
   response => response,
   error => {
-    //TODO: 에러 로깅 또는 처리
+    const status = error.response?.status;
+    const url = error.config?.url;
+    const message = error.response?.data?.message || error.message;
+    console.error(`[API Error] ${error.config?.method?.toUpperCase()} ${url} → ${status || 'Network Error'}: ${message}`);
     return Promise.reject(error);
   },
 );
