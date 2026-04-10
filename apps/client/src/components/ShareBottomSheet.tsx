@@ -1,6 +1,7 @@
 import { css } from "../../styled-system/css";
 import { Button } from "./Button";
 import { QrDisplay } from "./QrDisplay";
+import { trackEvent } from "../ga";
 
 interface ShareBottomSheetProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ export function ShareBottomSheet(props: ShareBottomSheetProps) {
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
+      trackEvent('share_room', { method: 'link_copy' });
       onCopied?.();
     } catch {
       onCopied?.();

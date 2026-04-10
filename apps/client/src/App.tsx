@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { QrScanner } from "./components/QrScanner";
 import { Button } from "./components/Button";
 import { Header } from "./components/Header";
+import { trackEvent } from "./ga";
 
 function App() {
   const { mutate: createRoom, data, isSuccess } = useRequestPostRoom();
@@ -18,6 +19,7 @@ function App() {
 
   useEffect(() => {
     if (isSuccess && data?.uuid) {
+      trackEvent('create_room');
       navigate(`/room/${data.uuid}`);
     }
   }, [isSuccess, data, navigate]);

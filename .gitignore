@@ -40,3 +40,5 @@ styled-system-studio
 # Claude Code
 .claude/
 memory/
+
+.vercel

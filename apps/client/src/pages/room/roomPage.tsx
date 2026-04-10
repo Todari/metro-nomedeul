@@ -9,6 +9,7 @@ import { ShareBottomSheet } from '../../components/ShareBottomSheet';
 import { BeatCard } from '../../components/BeatCard';
 import { Header } from '../../components/Header';
 import { getRoom } from '../../apis/room';
+import { trackEvent } from '../../ga';
 
 export const RoomPage = () => {
   const { uuid } = useParams();
@@ -241,8 +242,14 @@ export const RoomPage = () => {
           tempo={localTempo}
           beats={localBeats}
           isInitializing={isInitializing}
-          onStart={startMetronome}
-          onStop={stopMetronome}
+          onStart={() => {
+            trackEvent('play_metronome', { bpm: localTempo, beats: localBeats });
+            startMetronome();
+          }}
+          onStop={() => {
+            trackEvent('stop_metronome', { bpm: localTempo });
+            stopMetronome();
+          }}
           onSettingsClick={() => setIsSettingsOpen(true)}
           onShareClick={() => setIsShareOpen(true)}
           onStopForSettings={stopMetronome}
