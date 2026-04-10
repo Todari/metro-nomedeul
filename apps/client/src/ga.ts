@@ -1,6 +1,6 @@
 declare global {
   interface Window {
-    dataLayer: unknown[];
+    dataLayer: IArguments[];
     gtag: (...args: unknown[]) => void;
   }
 }
@@ -14,12 +14,14 @@ if (GA_ID) {
   document.head.appendChild(script);
 
   window.dataLayer = window.dataLayer || [];
-  function gtag(...args: unknown[]) {
-    window.dataLayer.push(args);
-  }
-  window.gtag = gtag;
-  gtag('js', new Date());
-  gtag('config', GA_ID);
+  // Must use `arguments` (IArguments), not rest params, to match the format
+  // gtag.js expects when processing the dataLayer queue.
+  window.gtag = function () {
+    // eslint-disable-next-line prefer-rest-params
+    window.dataLayer.push(arguments);
+  };
+  window.gtag('js', new Date());
+  window.gtag('config', GA_ID);
 }
 
 export function trackEvent(eventName: string, params?: Record<string, string | number | boolean>) {
