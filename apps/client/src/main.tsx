@@ -1,3 +1,4 @@
+import './ga';
 import { StrictMode } from 'react'
 import './index.css'
 import { css } from "../styled-system/css";
