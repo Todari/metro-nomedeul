@@ -9,6 +9,7 @@
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
 
     <!-- Canonical -->
     <link rel="canonical" href="https://metronomdeul.site/" />
@@ -32,6 +33,46 @@
     <!-- Additional SEO -->
     <meta name="keywords" content="메트로놈, 밴드, 합주, 클릭트랙, 동기화, 실시간, metronome, band, sync" />
     <meta name="author" content="메트로놈들" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://metronomdeul.site/#website",
+            "url": "https://metronomdeul.site/",
+            "name": "메트로놈들",
+            "description": "여러 연주자가 네트워크를 통해 동일한 박자에 동기화되는 실시간 협업 메트로놈",
+            "inLanguage": "ko-KR",
+            "publisher": { "@id": "https://metronomdeul.site/#org" }
+          },
+          {
+            "@type": "Organization",
+            "@id": "https://metronomdeul.site/#org",
+            "name": "Todari",
+            "url": "https://todari.dev"
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://metronomdeul.site/#app",
+            "name": "메트로놈들",
+            "applicationCategory": "MultimediaApplication",
+            "operatingSystem": "Web",
+            "url": "https://metronomdeul.site/",
+            "description": "방을 만들고 QR로 공유하면 여러 연주자가 같은 클릭을 동시에 들을 수 있는 무료 실시간 동기화 메트로놈 웹앱.",
+            "inLanguage": "ko-KR",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "KRW" },
+            "featureList": [
+              "방 생성 및 QR 공유",
+              "여러 클라이언트 실시간 BPM 동기화",
+              "재생 중 BPM/박자표 변경",
+              "네트워크 지연 보정"
+            ]
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
