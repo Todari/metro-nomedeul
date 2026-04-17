@@ -4,6 +4,7 @@ export const WS_EVENTS = {
   BEAT_SYNC: 'beatSync',
   INITIAL_STATE: 'initialState',
   TIME_SYNC_RESPONSE: 'timeSyncResponse',
+  SERVER_SHUTDOWN: 'serverShutdown',
 
   // Client → Server
   START_METRONOME: 'startMetronome',

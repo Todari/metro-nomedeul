@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import {
   MetronomeState,
@@ -16,7 +16,7 @@ interface RoomSyncTimers {
 }
 
 @Injectable()
-export class MetronomeService {
+export class MetronomeService implements OnModuleDestroy {
   private readonly logger = new Logger(MetronomeService.name);
 
   private metronomeStates = new Map<string, MetronomeState>();
@@ -26,6 +26,11 @@ export class MetronomeService {
 
   setServer(server: Server) {
     this.server = server;
+  }
+
+  onModuleDestroy() {
+    this.logger.log('MetronomeService shutting down — clearing all timers');
+    this.cleanupAll();
   }
 
   getState(roomUuid: string): MetronomeState | undefined {
@@ -56,10 +61,14 @@ export class MetronomeService {
     this.logger.log(`Initial state sent to ${client.id} (room: ${roomUuid})`);
   }
 
-  startMetronome(roomUuid: string, tempo: number, beats: number) {
+  startMetronome(roomUuid: string, tempo?: number, beats?: number) {
     const existing = this.metronomeStates.get(roomUuid);
 
-    // 이미 재생 중이고 타이머도 존재하면 현재 상태만 브로드캐스트
+    // Client's explicit value wins, fall back to existing state, then default
+    const effectiveTempo = tempo ?? existing?.tempo ?? DEFAULT_TEMPO;
+    const effectiveBeats = beats ?? existing?.beats ?? DEFAULT_BEATS;
+
+    // Already playing with a running timer: just rebroadcast current state
     if (existing?.isPlaying && this.syncTimers.has(roomUuid)) {
       this.logger.log(
         `Metronome already playing for room=${roomUuid}, broadcasting current state`,
@@ -69,7 +78,7 @@ export class MetronomeService {
     }
 
     this.logger.log(
-      `Start metronome: room=${roomUuid}, tempo=${tempo}, beats=${beats}`,
+      `Start metronome: room=${roomUuid}, tempo=${effectiveTempo}, beats=${effectiveBeats}`,
     );
 
     this.stopSyncTimers(roomUuid);
@@ -78,8 +87,8 @@ export class MetronomeService {
 
     const state: MetronomeState = {
       isPlaying: true,
-      tempo: existing?.tempo ?? tempo,
-      beats: existing?.beats ?? beats,
+      tempo: effectiveTempo,
+      beats: effectiveBeats,
       currentBeat: 0,
       startTime: now,
       serverTime: now,
@@ -89,7 +98,7 @@ export class MetronomeService {
 
     this.metronomeStates.set(roomUuid, state);
     this.broadcastMetronomeState(roomUuid);
-    this.startSyncTimers(roomUuid, tempo);
+    this.startSyncTimers(roomUuid, effectiveTempo);
   }
 
   stopMetronome(roomUuid: string) {
@@ -111,13 +120,21 @@ export class MetronomeService {
     const state = this.metronomeStates.get(roomUuid);
     if (!state) return;
 
-    if (state.isPlaying) {
-      state.isPlaying = false;
-      this.stopSyncTimers(roomUuid);
-    }
-
+    const oldTempo = state.tempo;
     state.tempo = tempo;
     state.serverTime = Date.now();
+
+    if (state.isPlaying && oldTempo > 0) {
+      // Preserve phase: recompute startTime so the fractional beat position stays the same
+      const oldBeatIntervalMs = 60_000 / oldTempo;
+      const newBeatIntervalMs = 60_000 / tempo;
+      const elapsedMs = state.serverTime - state.startTime;
+      const fractionalBeats = elapsedMs / oldBeatIntervalMs;
+      state.startTime = state.serverTime - fractionalBeats * newBeatIntervalMs;
+
+      // Restart beat timer at new interval
+      this.restartBeatTimer(roomUuid, tempo);
+    }
 
     this.broadcastMetronomeState(roomUuid);
   }
@@ -128,13 +145,14 @@ export class MetronomeService {
     const state = this.metronomeStates.get(roomUuid);
     if (!state) return;
 
-    if (state.isPlaying) {
-      state.isPlaying = false;
-      this.stopSyncTimers(roomUuid);
-    }
-
     state.beats = beats;
     state.serverTime = Date.now();
+
+    // Re-modulo beatCount in case it exceeds the new beats value
+    const timers = this.syncTimers.get(roomUuid);
+    if (timers) {
+      timers.beatCount = timers.beatCount % beats;
+    }
 
     this.broadcastMetronomeState(roomUuid);
   }
@@ -147,6 +165,16 @@ export class MetronomeService {
     this.logger.log(`Cleanup room: ${roomUuid}`);
     this.stopSyncTimers(roomUuid);
     this.metronomeStates.delete(roomUuid);
+  }
+
+  /**
+   * Stops all timers and clears state for every room. Used on graceful shutdown.
+   */
+  cleanupAll() {
+    for (const roomUuid of this.syncTimers.keys()) {
+      this.stopSyncTimers(roomUuid);
+    }
+    this.metronomeStates.clear();
   }
 
   private broadcastMetronomeState(roomUuid: string) {
@@ -213,9 +241,11 @@ export class MetronomeService {
 
       this.broadcastBeatSync(roomUuid);
 
-      const nextExpected = expectedTime + beatIntervalMs;
+      const currentTempo = currentState.tempo;
+      const currentBeatIntervalMs = 60_000 / currentTempo;
+      const nextExpected = expectedTime + currentBeatIntervalMs;
       const drift = Date.now() - expectedTime;
-      const delay = Math.max(1, beatIntervalMs - drift);
+      const delay = Math.max(1, currentBeatIntervalMs - drift);
 
       const currentTimers = this.syncTimers.get(roomUuid);
       if (currentTimers) {
@@ -228,6 +258,57 @@ export class MetronomeService {
 
     // Immediately send first beat, then schedule next
     scheduleNextBeat(Date.now());
+  }
+
+  /**
+   * Restarts the beat timer aligned to the state's current startTime + tempo.
+   * Keeps beatCount consistent with the already-broadcast phase.
+   */
+  private restartBeatTimer(roomUuid: string, tempo: number) {
+    const timers = this.syncTimers.get(roomUuid);
+    const state = this.metronomeStates.get(roomUuid);
+    if (!timers || !state) return;
+
+    if (timers.beatTimer) {
+      clearTimeout(timers.beatTimer);
+      timers.beatTimer = null;
+    }
+
+    const beatIntervalMs = 60_000 / tempo;
+    const elapsedMs = Date.now() - state.startTime;
+    const beatsSinceStart = elapsedMs / beatIntervalMs;
+    const nextBeatIndex = Math.ceil(beatsSinceStart);
+    const nextBeatAt = state.startTime + nextBeatIndex * beatIntervalMs;
+    const delay = Math.max(1, nextBeatAt - Date.now());
+
+    // Align beatCount to next beat's position within the bar
+    timers.beatCount = nextBeatIndex % state.beats;
+
+    const scheduleNextBeat = (expectedTime: number) => {
+      const currentState = this.metronomeStates.get(roomUuid);
+      if (!currentState?.isPlaying) {
+        this.stopSyncTimers(roomUuid);
+        return;
+      }
+
+      this.broadcastBeatSync(roomUuid);
+
+      const currentTempo = currentState.tempo;
+      const currentBeatIntervalMs = 60_000 / currentTempo;
+      const nextExpected = expectedTime + currentBeatIntervalMs;
+      const drift = Date.now() - expectedTime;
+      const d = Math.max(1, currentBeatIntervalMs - drift);
+
+      const currentTimers = this.syncTimers.get(roomUuid);
+      if (currentTimers) {
+        currentTimers.beatTimer = setTimeout(
+          () => scheduleNextBeat(nextExpected),
+          d,
+        );
+      }
+    };
+
+    timers.beatTimer = setTimeout(() => scheduleNextBeat(nextBeatAt), delay);
   }
 
   private stopSyncTimers(roomUuid: string) {

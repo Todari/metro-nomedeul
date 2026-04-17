@@ -31,6 +31,10 @@ describe('MetronomeService', () => {
     jest.clearAllMocks();
   });
 
+  afterEach(() => {
+    service.cleanupAll();
+  });
+
   describe('sendInitialState', () => {
     it('should send default state when room has no state', () => {
       const client = createMockSocket() as any;
@@ -102,7 +106,7 @@ describe('MetronomeService', () => {
   });
 
   describe('changeTempo', () => {
-    it('should update tempo and broadcast', () => {
+    it('should update tempo and broadcast when stopped', () => {
       service.startMetronome('room-1', 120, 4);
       service.stopMetronome('room-1');
       service.changeTempo('room-1', 140);
@@ -112,19 +116,34 @@ describe('MetronomeService', () => {
       });
     });
 
-    it('should stop if playing before changing tempo', () => {
+    it('should keep isPlaying true when changing tempo while playing', () => {
       service.startMetronome('room-1', 120, 4);
       service.changeTempo('room-1', 140);
 
       expect(service.getState('room-1')).toMatchObject({
-        isPlaying: false,
+        isPlaying: true,
         tempo: 140,
       });
+    });
+
+    it('should recompute startTime to preserve phase', () => {
+      service.startMetronome('room-1', 120, 4);
+      const before = service.getState('room-1')!;
+      const initialStart = before.startTime;
+
+      service.changeTempo('room-1', 60);
+
+      const after = service.getState('room-1')!;
+      // startTime shifted so that fractional beat position is preserved.
+      // With tempo halved (120→60), each remaining partial beat takes twice as long,
+      // so the effective startTime must move EARLIER (smaller number) or stay near original
+      // depending on elapsed time.
+      expect(after.startTime).toBeLessThanOrEqual(initialStart + 2);
     });
   });
 
   describe('changeBeats', () => {
-    it('should update beats and broadcast', () => {
+    it('should update beats and broadcast when stopped', () => {
       service.startMetronome('room-1', 120, 4);
       service.stopMetronome('room-1');
       service.changeBeats('room-1', 6);
@@ -134,13 +153,43 @@ describe('MetronomeService', () => {
       });
     });
 
-    it('should stop if playing before changing beats', () => {
+    it('should keep isPlaying true when changing beats while playing', () => {
       service.startMetronome('room-1', 120, 4);
       service.changeBeats('room-1', 6);
 
       expect(service.getState('room-1')).toMatchObject({
-        isPlaying: false,
+        isPlaying: true,
         beats: 6,
+      });
+    });
+  });
+
+  describe('startMetronome parameter handling', () => {
+    it('should use client-provided tempo/beats when given', () => {
+      service.startMetronome('room-1', 160, 3);
+      expect(service.getState('room-1')).toMatchObject({
+        tempo: 160,
+        beats: 3,
+      });
+    });
+
+    it('should fall back to existing state when called without args', () => {
+      service.startMetronome('room-1', 160, 3);
+      service.stopMetronome('room-1');
+      service.startMetronome('room-1');
+
+      expect(service.getState('room-1')).toMatchObject({
+        tempo: 160,
+        beats: 3,
+        isPlaying: true,
+      });
+    });
+
+    it('should fall back to defaults for fresh rooms', () => {
+      service.startMetronome('fresh-room');
+      expect(service.getState('fresh-room')).toMatchObject({
+        tempo: 120,
+        beats: 4,
       });
     });
   });

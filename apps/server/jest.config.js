@@ -11,7 +11,8 @@ module.exports = {
   testEnvironment: 'node',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   moduleNameMapper: {
-    '^@metro-nomedeul/shared$': '<rootDir>/../../packages/shared/dist/index.js',
+    '^@metro-nomedeul/shared$': '<rootDir>/../../packages/shared/src/index.ts',
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^(\\.{1,2}/.*)\\.js$': '$1',
   },
 };
