@@ -3,7 +3,7 @@
 ## REST API
 
 - POST `${VITE_API_URL}/room`
-  - 설명: 새 방을 생성하고 8자리 nanoid를 반환합니다.
+  - 설명: 새 방을 생성하고 8자리 nanoid를 반환합니다. 분당 5회로 제한됩니다.
   - 응답(201):
     ```json
     { "uuid": "AbC123Xy" }
@@ -14,10 +14,10 @@
   - 응답(200):
     ```json
     {
-      "id": "<mongo-id>",
-      "uuid": "AbC123Xy",
-      "created_at": "2024-01-01T00:00:00Z",
-      "updated_at": "2024-01-01T00:00:00Z"
+      "id": "<cuid>",
+      "roomId": "AbC123Xy",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
     }
     ```
   - 에러(400): 잘못된 ID 형식
@@ -25,34 +25,57 @@
 
 ## WebSocket
 
-- 접속 URL: `${VITE_WS_URL}/:id?userId=client-<랜덤>` (id는 8자리 nanoid)
-- 수신 메시지: `type === "metronomeState"`
+- 접속 URL: `${VITE_WS_URL}` (Socket.IO 기본 경로 `/socket.io`)
+- Query 파라미터
+  - `roomUuid`: 접속할 방 ID (필수)
+  - `userId`: 클라이언트 식별자 (선택)
 
-```json
-{
-  "type": "metronomeState",
-  "isPlaying": true,
-  "tempo": 128,
-  "beats": 4,
-  "startTime": 1730000000000,
-  "serverTime": 1730000000000,
-  "roomUuid": "AbC123Xy"
-}
-```
+### 설계: 공동 제어(Shared Control)
 
-### 클라이언트 → 서버 액션
-```json
-{ "action": "startMetronome", "tempo": 120, "beats": 4 }
-{ "action": "stopMetronome" }
-{ "action": "changeTempo", "tempo": 132 }
-{ "action": "changeBeats", "beats": 3 }
-```
+방에 접속한 **모든 사용자가 동등하게** 재생/정지/BPM·박자 변경을 할 수 있습니다. 이는 밴드 멤버 누구든 즉시 조절할 수 있게 하려는 의도된 설계입니다. 권한/방장 개념은 없습니다.
 
-- 서버는 액션 처리 후 최신 `metronomeState`를 동일 방의 모든 클라이언트에 브로드캐스트합니다.
-- BPM 변경 시 자연스러운 박자 유지를 위해 시작 시간을 재계산합니다.
-- 클라이언트는 메트로놈 시작 시 사운드가 로드되지 않은 경우 자동으로 로딩하고 완료 후 재생합니다.
+### 서버 → 클라이언트 이벤트
+
+- `initialState` / `metronomeState` / `beatSync`
+  - 페이로드 공통 형태:
+    ```json
+    {
+      "type": "metronomeState",
+      "isPlaying": true,
+      "tempo": 128,
+      "beats": 4,
+      "currentBeat": 0,
+      "startTime": 1730000000000,
+      "serverTime": 1730000000000,
+      "roomUuid": "AbC123Xy"
+    }
+    ```
+- `timeSyncResponse`: 클록 보정 응답. `{ "clientSendTime": <ms>, "serverTime": <ms> }`.
+- `serverShutdown`: 서버 종료 직전 브로드캐스트. 클라이언트는 재연결 대기를 표시하는 데 사용할 수 있습니다.
+
+### 클라이언트 → 서버 이벤트
+
+| 이벤트 | 페이로드 |
+|--------|----------|
+| `startMetronome` | `{ tempo?: number, beats?: number }` |
+| `stopMetronome` | `(none)` |
+| `changeTempo` | `{ tempo: number }` |
+| `changeBeats` | `{ beats: number }` |
+| `requestSync` | `(none)` |
+| `timeSyncRequest` | `{ clientSendTime: number }` |
+
+- 서버는 이벤트마다 소켓당 token-bucket 기반 rate limit을 적용합니다(예: `changeTempo`는 초당 20회).
+- `startMetronome`/`stopMetronome`는 서버 인메모리 상태를 변경하고 방의 모든 소켓에 `metronomeState`를 브로드캐스트합니다.
+- `changeTempo`/`changeBeats`는 **재생 중이어도 위상을 유지한 채 값만 교체합니다** — 이전 구현처럼 재생을 정지시키지 않습니다.
+
+### 방 정원/유지 시간
+
+- 방당 최대 동시 접속: 20명.
+- 마지막 접속자가 나간 뒤 10초의 유예가 지나면 서버 인메모리 상태를 제거합니다. 같은 방에 재접속이 발생하면 유예 타이머가 취소됩니다.
+- DB의 방 레코드 자체는 24시간 후 자동 삭제됩니다.
 
 ## 에러/재연결
-- `useWebSocket`은 지수 백오프로 자동 재연결(최대 10초 간격).
+- 클라이언트 Socket.IO는 지수 백오프로 자동 재연결(최대 10회, 최대 30초 간격)합니다.
+- 재연결 시 5라운드의 `timeSyncRequest`를 다시 수행하며, 이후 5분마다 주기적으로 재측정해 클록 드리프트를 보정합니다.
+- 탭이 백그라운드 → 포그라운드로 전환되면 `requestSync`를 보내 서버 상태로 강제 재동기화합니다.
 - `utils/http.ts` 인터셉터는 오류를 상위로 전파(추후 로깅 확장 권장).
-

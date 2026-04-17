@@ -35,22 +35,28 @@ npm run build
 
 ### 로컬 실행
 ```
-cd server
 docker compose up -d --build
 ```
-- API: `http://localhost:8080`
-- WS: `ws://localhost:8080/ws/:uuid`
+- API: `http://localhost:3000`
+- WS: `ws://localhost:3000/socket.io`
 
-### 주요 환경 변수 (server/.env 또는 compose 변수)
+### 주요 환경 변수 (apps/server/.env 또는 compose 변수)
 ```
-PORT=8080
-DATABASE_URL=mongodb://mongo:27017
-DATABASE_NAME=metronomdeul
+PORT=3000
+DATABASE_URL=postgresql://metronomdeul:metronomdeul@localhost:5432/metronomdeul
 ALLOWED_ORIGIN=http://localhost:5173,http://localhost:3000,https://metronomdeul.site,https://www.metronomdeul.site
-JWT_SECRET=<set-strong-secret>
 ```
+
+### 인스턴스 구성
+
+현재 구현은 **단일 인스턴스 배포 전용**입니다. 방 상태(재생 여부, tempo, beats, 타이머)는 프로세스 메모리에 저장되므로 여러 인스턴스를 띄우면 같은 방에 접속한 클라이언트들끼리 상태 동기화가 깨집니다. 수평 확장이 필요해지면 Socket.IO redis-adapter + 상태 Redis 이관을 함께 도입해야 합니다.
 
 ### 운영 배포 가이드라인
 - 컨테이너 이미지 빌드 후 오케스트레이션(K8s/Swarm/Compose)로 배포
 - 로드밸런서/프록시에서 WS 업그레이드 헤더(`Connection`, `Upgrade`) 전달 보장
 - `ALLOWED_ORIGIN`에 배포된 프론트 도메인을 반드시 포함
+- Graceful shutdown: 프로세스는 `SIGTERM`에서 `serverShutdown`을 브로드캐스트한 뒤 타이머를 정리합니다. 오케스트레이터가 stop grace period를 10초 이상 주도록 설정하세요.
+
+### Prisma 마이그레이션
+- 스키마 변경 후 `npx prisma migrate dev --name <name>`로 마이그레이션을 생성합니다.
+- 운영 적용은 `npx prisma migrate deploy`.
