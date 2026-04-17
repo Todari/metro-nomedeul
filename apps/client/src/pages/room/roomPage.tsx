@@ -28,6 +28,7 @@ export const RoomPage = () => {
     changeBeats,
     tapTempo,
     initializeAudio,
+    requestSync,
   } = useMetronome(uuid ?? '');
 
   // 방 존재 여부 확인
@@ -93,6 +94,19 @@ export const RoomPage = () => {
       });
     };
   }, [initializeAudio]);
+
+  // Re-sync with server when tab returns from background to correct any drift
+  // or missed beats while hidden.
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && isConnected) {
+        requestSync();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () =>
+      document.removeEventListener('visibilitychange', handleVisibility);
+  }, [isConnected, requestSync]);
 
   const [localTempo, setLocalTempo] = useState(tempo);
   const [localBeats, setLocalBeats] = useState(beats);
@@ -252,7 +266,6 @@ export const RoomPage = () => {
           }}
           onSettingsClick={() => setIsSettingsOpen(true)}
           onShareClick={() => setIsShareOpen(true)}
-          onStopForSettings={stopMetronome}
         />
 
         <SettingsBottomSheet
@@ -260,7 +273,6 @@ export const RoomPage = () => {
           onClose={() => setIsSettingsOpen(false)}
           tempo={localTempo}
           beats={localBeats}
-          isPlaying={isPlaying}
           onTempoChange={(t) => {
             setLocalTempo(t);
             changeTempo(t);
@@ -270,7 +282,6 @@ export const RoomPage = () => {
             changeBeats(b);
           }}
           onTapTempo={tapTempo}
-          onStopForSettings={stopMetronome}
         />
 
         <ShareBottomSheet

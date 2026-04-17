@@ -360,6 +360,16 @@ export class Metronome {
 
     const nowAudio = this.audioContext.currentTime;
     const secondsPerBeat = 60.0 / this.tempo;
+    const maxCatchupBeats = 2;
+
+    // Skip accumulated missed beats (e.g., after tab was backgrounded)
+    // so we don't flood the audio context with a burst of clicks.
+    const behindSec = nowAudio - this.nextNoteTimeSec;
+    if (behindSec > maxCatchupBeats * secondsPerBeat) {
+      const skip = Math.floor(behindSec / secondsPerBeat);
+      this.nextNoteTimeSec += skip * secondsPerBeat;
+      this.beatCount = (this.beatCount + skip) % this.beatsPerBar;
+    }
 
     while (this.nextNoteTimeSec <= nowAudio + this.scheduleAheadSec) {
       this.scheduleNote(this.nextNoteTimeSec, this.beatCount);

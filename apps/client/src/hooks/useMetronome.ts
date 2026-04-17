@@ -4,6 +4,23 @@ import { useSocket } from './useSocket';
 import { WS_EVENTS } from '@metro-nomedeul/shared';
 import type { MetronomeState } from '@metro-nomedeul/shared';
 
+const USER_ID_KEY = 'metronomdeul:userId';
+
+const getOrCreateUserId = (): string => {
+  if (typeof window === 'undefined') {
+    return `client-${Math.random().toString(36).slice(2)}`;
+  }
+  try {
+    const stored = window.localStorage.getItem(USER_ID_KEY);
+    if (stored) return stored;
+    const fresh = `client-${Math.random().toString(36).slice(2)}`;
+    window.localStorage.setItem(USER_ID_KEY, fresh);
+    return fresh;
+  } catch {
+    return `client-${Math.random().toString(36).slice(2)}`;
+  }
+};
+
 export const useMetronome = (roomUuid: string) => {
   const metronomeRef = useRef<Metronome | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -14,10 +31,7 @@ export const useMetronome = (roomUuid: string) => {
   const [isInitializing, setIsInitializing] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
 
-  const userId = useMemo(
-    () => `client-${Math.random().toString(36).slice(2)}`,
-    [],
-  );
+  const userId = useMemo(() => getOrCreateUserId(), []);
 
   const handleServerMessage = useCallback((data: MetronomeState) => {
     metronomeRef.current?.handleServerState(data);
@@ -72,6 +86,7 @@ export const useMetronome = (roomUuid: string) => {
       const success = await metronomeRef.current.initialize();
       if (success) {
         setIsAudioReady(true);
+        setAudioError(null);
       } else {
         setAudioError(
           '오디오를 초기화할 수 없습니다. 브라우저 설정을 확인해주세요.',
@@ -133,6 +148,10 @@ export const useMetronome = (roomUuid: string) => {
     emit(WS_EVENTS.CHANGE_TEMPO as 'changeTempo', { tempo: newTempo });
   }, [emit]);
 
+  const requestSync = useCallback(() => {
+    emit(WS_EVENTS.REQUEST_SYNC as 'requestSync');
+  }, [emit]);
+
   const clearTapTimes = useCallback(() => {
     metronomeRef.current?.clearTapTimes();
   }, []);
@@ -158,5 +177,6 @@ export const useMetronome = (roomUuid: string) => {
     clearTapTimes,
     getTapCount,
     initializeAudio,
+    requestSync,
   };
 };
