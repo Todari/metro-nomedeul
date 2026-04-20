@@ -406,7 +406,8 @@ async function test14_reconnect(uuid) {
 async function test15_cleanup() {
   let socket;
   try {
-    // Create a new room, set state, disconnect all, reconnect
+    // Create a new room, set state, disconnect all, reconnect.
+    // Cleanup has a 10s grace window, so we wait 12s before reconnecting.
     const res = await fetch(`${API_URL}/room`, { method: 'POST' });
     const { uuid } = await res.json();
 
@@ -421,9 +422,9 @@ async function test15_cleanup() {
     c1.socket.emit('stopMetronome');
     await pStop;
 
-    // Disconnect — triggers cleanup since last client
+    // Disconnect — cleanup fires after grace window expires
     c1.socket.disconnect();
-    await sleep(1000);
+    await sleep(12000);
 
     // Reconnect — should get default state (tempo=120, beats=4)
     const c2 = await connectSocket(uuid, 'test-cleanup-2', { waitInitial: true });
