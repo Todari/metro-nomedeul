@@ -163,9 +163,6 @@ export class Metronome {
     const secondsPerBeat = 60.0 / serverState.tempo;
     const totalBeats = elapsedMs / (secondsPerBeat * 1000);
 
-    // Use server-provided currentBeat if available
-    const currentBeatIdx = serverState.currentBeat ?? Math.floor(totalBeats) % serverState.beats;
-
     const nextBeat = Math.ceil(totalBeats);
     const nextBeatMs = localStartTime + nextBeat * secondsPerBeat * 1000;
     const nextBeatAudio = nowAudio + (nextBeatMs - now) / 1000;
@@ -176,7 +173,7 @@ export class Metronome {
     if (diff > threshold) {
       this.pendingSync = {
         nextNoteTimeSec: Math.max(nextBeatAudio, nowAudio + 0.001),
-        beatCount: currentBeatIdx,
+        beatCount: nextBeat % serverState.beats,
       };
     }
   }
@@ -193,7 +190,6 @@ export class Metronome {
 
     const secondsPerBeat = 60.0 / serverState.tempo;
     const totalBeats = elapsedMs / (secondsPerBeat * 1000);
-    const currentBeatIdx = serverState.currentBeat ?? Math.floor(totalBeats) % serverState.beats;
 
     const nextBeat = Math.ceil(totalBeats);
     const nextBeatMs = localStartTime + nextBeat * secondsPerBeat * 1000;
@@ -206,7 +202,7 @@ export class Metronome {
     if (diff > threshold && diff < maxDiff) {
       this.pendingSync = {
         nextNoteTimeSec: Math.max(nextBeatAudio, nowAudio + 0.001),
-        beatCount: currentBeatIdx,
+        beatCount: nextBeat % serverState.beats,
       };
     }
   }
@@ -426,7 +422,6 @@ export class Metronome {
       const oldSpb = 60.0 / oldTempo;
       const elapsedMs = now - this.startTime;
       const totalBeats = elapsedMs / (oldSpb * 1000);
-      const currentBeatIdx = Math.floor(totalBeats) % this.beatsPerBar;
 
       const nextBeat = Math.ceil(totalBeats);
       const ratio = newTempo / oldTempo;
@@ -437,7 +432,7 @@ export class Metronome {
 
       this.pendingSync = {
         nextNoteTimeSec: Math.max(nextAudio, nowAudio + 0.001),
-        beatCount: currentBeatIdx,
+        beatCount: nextBeat % this.beatsPerBar,
       };
     }
   }

@@ -69,7 +69,7 @@ export const useSocket = ({
     let activeSyncCleanup: (() => void) | null = null;
 
     // Time sync: measure RTT and estimate clock offset
-    const performTimeSync = () => {
+    const performTimeSync = (onComplete?: () => void) => {
       // Cancel any prior in-flight sync before starting a new one
       activeSyncCleanup?.();
 
@@ -99,6 +99,7 @@ export const useSocket = ({
           cleanup();
           offsets.sort((a, b) => a - b);
           clockOffsetRef.current = offsets[Math.floor(offsets.length / 2)];
+          onComplete?.();
         }
       };
 
@@ -116,8 +117,11 @@ export const useSocket = ({
 
     socket.on('connect', () => {
       setIsConnected(true);
-      performTimeSync();
-      socket.emit(WS_EVENTS.REQUEST_SYNC);
+      // Defer REQUEST_SYNC until after offset is measured, so the full-state
+      // re-broadcast is interpreted with a valid clockOffsetRef.
+      performTimeSync(() => {
+        socket.emit(WS_EVENTS.REQUEST_SYNC);
+      });
 
       if (resyncIntervalId) clearInterval(resyncIntervalId);
       resyncIntervalId = setInterval(
