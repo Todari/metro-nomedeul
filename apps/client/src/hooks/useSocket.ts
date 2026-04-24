@@ -68,60 +68,84 @@ export const useSocket = ({
     let resyncIntervalId: ReturnType<typeof setInterval> | null = null;
     let activeSyncCleanup: (() => void) | null = null;
 
-    // Time sync: measure RTT and estimate clock offset
-    const performTimeSync = (onComplete?: () => void) => {
-      // Cancel any prior in-flight sync before starting a new one
+    // Time sync: measure RTT and estimate clock offset.
+    // Returns a Promise that resolves when the 5-round measurement completes,
+    // or when the sync is cancelled externally (e.g. on disconnect).
+    const performTimeSync = (): Promise<void> => {
       activeSyncCleanup?.();
 
-      const offsets: number[] = [];
-      let round = 0;
-      let pingTimer: ReturnType<typeof setTimeout> | null = null;
-      let cancelled = false;
+      return new Promise((resolve) => {
+        const offsets: number[] = [];
+        let round = 0;
+        let pingTimer: ReturnType<typeof setTimeout> | null = null;
+        let cancelled = false;
 
-      const sendPing = () => {
-        if (cancelled) return;
-        socket.emit(WS_EVENTS.TIME_SYNC_REQUEST, {
-          clientSendTime: Date.now(),
-        });
-      };
+        const sendPing = () => {
+          if (cancelled) return;
+          socket.emit(WS_EVENTS.TIME_SYNC_REQUEST, {
+            clientSendTime: Date.now(),
+          });
+        };
 
-      const onSyncResponse = (data: TimeSyncResponse) => {
-        if (cancelled) return;
-        const clientReceiveTime = Date.now();
-        const rtt = clientReceiveTime - data.clientSendTime;
-        const offset = data.serverTime - (data.clientSendTime + rtt / 2);
-        offsets.push(offset);
-        round++;
+        const onSyncResponse = (data: TimeSyncResponse) => {
+          if (cancelled) return;
+          const clientReceiveTime = Date.now();
+          const rtt = clientReceiveTime - data.clientSendTime;
+          const offset = data.serverTime - (data.clientSendTime + rtt / 2);
+          offsets.push(offset);
+          round++;
 
-        if (round < TIME_SYNC_ROUNDS) {
-          pingTimer = setTimeout(sendPing, TIME_SYNC_INTERVAL_MS);
-        } else {
+          if (round < TIME_SYNC_ROUNDS) {
+            pingTimer = setTimeout(sendPing, TIME_SYNC_INTERVAL_MS);
+          } else {
+            cleanup();
+            offsets.sort((a, b) => a - b);
+            clockOffsetRef.current = offsets[Math.floor(offsets.length / 2)];
+            resolve();
+          }
+        };
+
+        const cleanup = () => {
+          cancelled = true;
+          if (pingTimer) clearTimeout(pingTimer);
+          socket.off(WS_EVENTS.TIME_SYNC_RESPONSE, onSyncResponse);
+          activeSyncCleanup = null;
+        };
+
+        // External cancellation (e.g. disconnect) resolves immediately
+        // without updating clockOffset so the awaiter is not left hanging.
+        activeSyncCleanup = () => {
           cleanup();
-          offsets.sort((a, b) => a - b);
-          clockOffsetRef.current = offsets[Math.floor(offsets.length / 2)];
-          onComplete?.();
-        }
-      };
+          resolve();
+        };
 
-      const cleanup = () => {
-        cancelled = true;
-        if (pingTimer) clearTimeout(pingTimer);
-        socket.off(WS_EVENTS.TIME_SYNC_RESPONSE, onSyncResponse);
-        activeSyncCleanup = null;
-      };
-      activeSyncCleanup = cleanup;
-
-      socket.on(WS_EVENTS.TIME_SYNC_RESPONSE, onSyncResponse);
-      sendPing();
+        socket.on(WS_EVENTS.TIME_SYNC_RESPONSE, onSyncResponse);
+        sendPing();
+      });
     };
 
-    socket.on('connect', () => {
+    socket.on('connect', async () => {
       setIsConnected(true);
-      // Defer REQUEST_SYNC until after offset is measured, so the full-state
-      // re-broadcast is interpreted with a valid clockOffsetRef.
-      performTimeSync(() => {
-        socket.emit(WS_EVENTS.REQUEST_SYNC);
-      });
+
+      // Buffer INITIAL_STATE that arrives before clockOffset is ready.
+      // Processing it with clockOffset=0 would produce a wrong phase calculation.
+      let bufferedInitialState: MetronomeState | null = null;
+      const bufferInitialState = (data: MetronomeState) => {
+        bufferedInitialState = data;
+      };
+      socket.once(WS_EVENTS.INITIAL_STATE, bufferInitialState);
+
+      await performTimeSync();
+
+      // Guard against disconnect while we were awaiting
+      if (!socket.connected) return;
+
+      // clockOffset is now accurate; process buffered state then get latest
+      socket.off(WS_EVENTS.INITIAL_STATE, bufferInitialState);
+      if (bufferedInitialState) {
+        onInitialStateRef.current?.(bufferedInitialState);
+      }
+      socket.emit(WS_EVENTS.REQUEST_SYNC);
 
       if (resyncIntervalId) clearInterval(resyncIntervalId);
       resyncIntervalId = setInterval(
@@ -145,10 +169,6 @@ export const useSocket = ({
 
     socket.on(WS_EVENTS.BEAT_SYNC, (data: MetronomeState) => {
       onBeatSyncRef.current?.(data);
-    });
-
-    socket.on(WS_EVENTS.INITIAL_STATE, (data: MetronomeState) => {
-      onInitialStateRef.current?.(data);
     });
 
     socket.on(WS_EVENTS.SERVER_SHUTDOWN, () => {

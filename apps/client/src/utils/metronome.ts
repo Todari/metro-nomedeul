@@ -167,7 +167,7 @@ export class Metronome {
     const nextBeatMs = localStartTime + nextBeat * secondsPerBeat * 1000;
     const nextBeatAudio = nowAudio + (nextBeatMs - now) / 1000;
 
-    const threshold = secondsPerBeat * 0.1;
+    const threshold = 0.010;
     const diff = Math.abs(nextBeatAudio - this.nextNoteTimeSec);
 
     if (diff > threshold) {
