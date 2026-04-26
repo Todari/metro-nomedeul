@@ -173,6 +173,11 @@ export const useMetronome = (roomUuid: string) => {
     emit(WS_EVENTS.REQUEST_SYNC as 'requestSync');
   }, [emit]);
 
+  // user gesture 핸들러 안에서 동기적으로 호출해야 iOS Safari resume hang을 피함
+  const primeAudioContext = useCallback(() => {
+    metronomeRef.current?.primeAudioContextSync();
+  }, []);
+
   const clearTapTimes = useCallback(() => {
     metronomeRef.current?.clearTapTimes();
   }, []);
@@ -198,6 +203,7 @@ export const useMetronome = (roomUuid: string) => {
     clearTapTimes,
     getTapCount,
     initializeAudio,
+    primeAudioContext,
     requestSync,
   };
 };

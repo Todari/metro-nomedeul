@@ -28,6 +28,7 @@ export const RoomPage = () => {
     changeBeats,
     tapTempo,
     initializeAudio,
+    primeAudioContext,
     requestSync,
   } = useMetronome(uuid ?? '');
 
@@ -76,24 +77,36 @@ export const RoomPage = () => {
   }, [isConnected]);
 
   useEffect(() => {
-    const handleUserInteraction = () => {
+    // capture phase에서 동기적으로 AudioContext priming — React onClick보다 먼저 실행되어
+    // user gesture 안에서 audioContext.resume()이 호출되도록 보장. iOS Safari에서 resume이
+    // pending 상태로 멈추는 것을 방지함. 이후 async initializeAudio는 이미 'running' 상태를
+    //보고 빠르게 true 반환.
+    const handlePrime = () => {
+      primeAudioContext();
+    };
+    const handleAsyncInit = () => {
+      // pendingServerState 처리 등 비동기 init 후속 처리
       initializeAudio();
     };
 
-    // isAudioReady여도 pendingPlayback이 있을 수 있으므로 항상 리스너 유지
-    const events = ['click', 'touchstart', 'keydown'] as const;
+    const events = ['pointerdown', 'click', 'touchstart', 'keydown'] as const;
     events.forEach((event) => {
-      document.addEventListener(event, handleUserInteraction, {
+      document.addEventListener(event, handlePrime, {
         passive: true,
+        capture: true,
       });
+      document.addEventListener(event, handleAsyncInit, { passive: true });
     });
 
     return () => {
       events.forEach((event) => {
-        document.removeEventListener(event, handleUserInteraction);
+        document.removeEventListener(event, handlePrime, {
+          capture: true,
+        } as EventListenerOptions);
+        document.removeEventListener(event, handleAsyncInit);
       });
     };
-  }, [initializeAudio]);
+  }, [initializeAudio, primeAudioContext]);
 
   // Re-sync with server when tab returns from background to correct any drift
   // or missed beats while hidden.
