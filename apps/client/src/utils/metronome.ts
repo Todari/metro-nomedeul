@@ -58,15 +58,29 @@ export class Metronome {
   }
 
   /**
-   * iOS Safari/Chrome Android 안전성: AudioContext 생성과 resume() 호출을 동기적으로 수행한다.
-   * await 체인을 거치지 않고 user gesture 핸들러 안에서 곧바로 호출되어야 함 — 그렇지 않으면
-   * resume() promise가 영원히 pending 상태로 멈춘다. 글로벌 click 리스너의 capture phase에서 호출.
+   * iOS Safari/Chrome 안전성: AudioContext 생성, 무음 buffer 재생, resume() 호출을 모두 동기적으로 수행.
+   * iOS Chrome (WKWebView)은 resume()만으론 audio engine이 unlock되지 않으므로 gesture 안에서
+   * 실제로 음원을 한 번 재생해야 함. await 체인을 거치지 않고 user gesture 핸들러에서 곧바로 호출되어야
+   * 함 — 그렇지 않으면 resume()이 영원히 pending. 글로벌 click 리스너의 capture phase에서 호출.
    */
   public primeAudioContextSync(): void {
     if (!this.audioContext) {
       this.createAudioContext();
     }
-    if (this.audioContext && this.audioContext.state === 'suspended') {
+    if (!this.audioContext) return;
+
+    // iOS Chrome (WKWebView) audio unlock: gesture 안에서 무음 1-sample buffer 재생
+    try {
+      const buffer = this.audioContext.createBuffer(1, 1, 22050);
+      const source = this.audioContext.createBufferSource();
+      source.buffer = buffer;
+      source.connect(this.audioContext.destination);
+      source.start(0);
+    } catch {
+      // 일부 브라우저에서 createBuffer 거부할 수 있음 — 무시하고 resume만 시도
+    }
+
+    if (this.audioContext.state === 'suspended') {
       // fire-and-forget: 절대 await하지 말 것 (sync chain 깨짐)
       this.audioContext.resume().catch(() => {});
     }
