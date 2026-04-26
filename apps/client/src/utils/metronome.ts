@@ -35,9 +35,9 @@ export class Metronome {
   private readonly minBeatSyncInterval = 50;
   private latestServerIsPlaying = false;
 
-  constructor() {
-    this.createAudioContext();
-  }
+  private readonly attackTimeSec = 0.005;
+
+  // AudioContext는 사용자 제스처 안에서만 안정적으로 resume 가능 → initialize()에서 lazy 생성
 
   private createAudioContext(): boolean {
     if (this.audioContext) return true;
@@ -85,6 +85,17 @@ export class Metronome {
       return true;
     } finally {
       this.isInitializing = false;
+    }
+  }
+
+  public async resumeIfSuspended(): Promise<void> {
+    if (!this.audioContext) return;
+    if (this.audioContext.state === 'suspended') {
+      try {
+        await this.audioContext.resume();
+      } catch {
+        // 백그라운드에서 자동 suspend된 경우 사용자 제스처 없으면 실패할 수 있음 — 다음 제스처에서 재시도
+      }
     }
   }
 
@@ -210,9 +221,8 @@ export class Metronome {
   private async startFromServer(serverState: MetronomeState) {
     if (this.isPlaying || this.isStarting) return;
 
-    if (!this.audioContext) {
-      await this.initialize();
-    }
+    // 사용자 제스처 없이 AudioContext를 만들면 iOS Safari에서 영구 suspended로 오염됨 →
+    // 컨텍스트가 아직 없으면 resume 시도하지 말고 pending에 저장, 다음 사용자 제스처에 처리
     if (!this.audioContext) {
       this.pendingServerState = serverState;
       return;
@@ -399,7 +409,7 @@ export class Metronome {
     oscillator.type = 'sine';
 
     gainNode.gain.setValueAtTime(0, timeSec);
-    gainNode.gain.linearRampToValueAtTime(1, timeSec + 0.001);
+    gainNode.gain.linearRampToValueAtTime(1, timeSec + this.attackTimeSec);
     gainNode.gain.exponentialRampToValueAtTime(0.01, timeSec + duration);
 
     oscillator.connect(gainNode);

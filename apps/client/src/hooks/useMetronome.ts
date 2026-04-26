@@ -23,6 +23,7 @@ const getOrCreateUserId = (): string => {
 
 export const useMetronome = (roomUuid: string) => {
   const metronomeRef = useRef<Metronome | null>(null);
+  const initPromiseRef = useRef<Promise<boolean> | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [tempo, setTempo] = useState(120);
   const [beats, setBeats] = useState(4);
@@ -65,41 +66,61 @@ export const useMetronome = (roomUuid: string) => {
     };
   }, []);
 
-  const initializeAudio = useCallback(async () => {
-    if (!metronomeRef.current || isInitializing) return false;
+  const initializeAudio = useCallback(async (): Promise<boolean> => {
+    const metronome = metronomeRef.current;
+    if (!metronome) return false;
 
-    // 이미 오디오 준비 완료되고 대기 중인 재생도 없으면 스킵
-    if (isAudioReady && !metronomeRef.current.hasPendingPlayback()) return true;
+    // 모바일에서 같은 탭(예: Play 버튼 + document 전역 리스너)에 두 핸들러가 동시 발화하는
+    // race를 방지: 진행 중인 init이 있으면 같은 Promise를 반환해 둘 다 같은 결과를 받도록 한다
+    if (initPromiseRef.current) return initPromiseRef.current;
 
-    setIsInitializing(true);
-    setAudioError(null);
-    try {
-      // 대기 중인 서버 재생 상태가 있으면 제스처와 함께 재개
-      if (metronomeRef.current.hasPendingPlayback()) {
-        const success = await metronomeRef.current.resumeAfterGesture();
-        if (success) {
-          setIsAudioReady(true);
-          return true;
+    if (isAudioReady && !metronome.hasPendingPlayback()) return true;
+
+    const promise = (async (): Promise<boolean> => {
+      setIsInitializing(true);
+      setAudioError(null);
+      try {
+        if (metronome.hasPendingPlayback()) {
+          const ok = await metronome.resumeAfterGesture();
+          if (ok) {
+            setIsAudioReady(true);
+            return true;
+          }
         }
-      }
 
-      const success = await metronomeRef.current.initialize();
-      if (success) {
-        setIsAudioReady(true);
-        setAudioError(null);
-      } else {
-        setAudioError(
-          '오디오를 초기화할 수 없습니다. 브라우저 설정을 확인해주세요.',
-        );
+        const ok = await metronome.initialize();
+        if (ok) {
+          setIsAudioReady(true);
+          setAudioError(null);
+        } else {
+          setAudioError(
+            '오디오를 초기화할 수 없습니다. 브라우저 설정을 확인해주세요.',
+          );
+        }
+        return ok;
+      } catch {
+        setAudioError('오디오 초기화 중 오류가 발생했습니다.');
+        return false;
+      } finally {
+        setIsInitializing(false);
+        initPromiseRef.current = null;
       }
-      return success;
-    } catch {
-      setAudioError('오디오 초기화 중 오류가 발생했습니다.');
-      return false;
-    } finally {
-      setIsInitializing(false);
-    }
-  }, [isAudioReady, isInitializing]);
+    })();
+
+    initPromiseRef.current = promise;
+    return promise;
+  }, [isAudioReady]);
+
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        metronomeRef.current?.resumeIfSuspended();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () =>
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+  }, []);
 
   const startMetronome = useCallback(async () => {
     if (!metronomeRef.current) return;
