@@ -28,6 +28,8 @@
     "@nestjs/throttler": "^6.5.0",
     "@nestjs/websockets": "^11",
     "@prisma/client": "^6",
+    "@sentry/node": "^10.49.0",
+    "helmet": "^8.1.0",
     "nanoid": "^5",
     "reflect-metadata": "^0.2",
     "rxjs": "^7",

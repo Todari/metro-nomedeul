@@ -7,26 +7,32 @@ import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from 'react-router-dom';
 import { router } from './routes.tsx';
+import { initSentry, Sentry } from './utils/sentry';
+import { ErrorFallback } from './components/ErrorFallback';
+
+initSentry();
 
 const queryClient = new QueryClient();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <div
-        className={
-          css({
-            minH: '100dvh',
-            bg: 'neutral.900',
-            color: 'white',
-            fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Noto Sans KR, Apple SD Gothic Neo, sans-serif',
-          })
-        }
-      >
-        <div className={container({ maxW: '720px' })}>
-          <RouterProvider router={router} />
+    <Sentry.ErrorBoundary fallback={<ErrorFallback />}>
+      <QueryClientProvider client={queryClient}>
+        <div
+          className={
+            css({
+              minH: '100dvh',
+              bg: 'neutral.900',
+              color: 'white',
+              fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Noto Sans KR, Apple SD Gothic Neo, sans-serif',
+            })
+          }
+        >
+          <div className={container({ maxW: '720px' })}>
+            <RouterProvider router={router} />
+          </div>
         </div>
-      </div>
-    </QueryClientProvider>
+      </QueryClientProvider>
+    </Sentry.ErrorBoundary>
   </StrictMode>,
 )

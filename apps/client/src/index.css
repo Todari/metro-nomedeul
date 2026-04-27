@@ -1,5 +1,12 @@
 @layer reset, base, tokens, recipes, utilities;
 
+/* iOS rubber-band 스크롤이나 컨텐츠 길이가 100dvh를 넘을 때 흰색 기본 배경이 비치지 않도록
+   html/body 자체에 다크 배경을 깔아둔다 (var는 panda의 neutral.900 = #171717) */
+html,
+body {
+  background-color: #171717;
+}
+
 @keyframes spin {
   from {
     transform: rotate(0deg);
