@@ -115,18 +115,20 @@ export class Metronome {
       if (!this.audioContext) return false;
 
       if (this.audioContext.state === 'suspended') {
-        try {
-          // 모바일에서 일부 케이스 resume()이 영원히 pending 상태로 멈출 수 있어 timeout 방어
-          await Promise.race([
-            this.audioContext.resume(),
-            new Promise<never>((_, reject) =>
-              setTimeout(() => reject(new Error('resume timeout')), 3000),
-            ),
-          ]);
-        } catch {
-          return false;
+        // primeAudioContextSync가 이미 resume을 시작했을 수 있으므로 fire-and-forget으로 한 번 더 시도
+        // (이미 진행 중이면 idempotent), 그 후 state가 'running'이 될 때까지 polling으로 기다린다.
+        // iOS Chrome은 resume()의 promise resolve 타이밍과 실제 state 전환이 어긋날 수 있어서
+        // promise await가 아닌 state polling이 더 신뢰성 있음.
+        this.audioContext.resume().catch(() => {});
+
+        const deadline = Date.now() + 3000;
+        while (
+          this.audioContext.state === 'suspended' &&
+          Date.now() < deadline
+        ) {
+          await new Promise((resolve) => setTimeout(resolve, 30));
         }
-        // resume()이 resolve되어도 모바일에서 사용자 제스처 없으면 suspended 유지
+
         if (this.audioContext.state === 'suspended') {
           return false;
         }
