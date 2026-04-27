@@ -69,15 +69,31 @@ export class Metronome {
     }
     if (!this.audioContext) return;
 
-    // iOS Chrome (WKWebView) audio unlock: gesture 안에서 무음 1-sample buffer 재생
+    // iOS Chrome (WKWebView) audio unlock: gesture 안에서 무음 buffer + 무음 oscillator 모두 재생
+    // 일부 브라우저는 buffer만으론 부족, oscillator만으론 부족 — 둘 다 시도해야 가장 호환성 높음
     try {
-      const buffer = this.audioContext.createBuffer(1, 1, 22050);
+      const buffer = this.audioContext.createBuffer(
+        1,
+        1,
+        this.audioContext.sampleRate,
+      );
       const source = this.audioContext.createBufferSource();
       source.buffer = buffer;
       source.connect(this.audioContext.destination);
       source.start(0);
     } catch {
-      // 일부 브라우저에서 createBuffer 거부할 수 있음 — 무시하고 resume만 시도
+      // 무시
+    }
+    try {
+      const osc = this.audioContext.createOscillator();
+      const gain = this.audioContext.createGain();
+      gain.gain.value = 0;
+      osc.connect(gain);
+      gain.connect(this.audioContext.destination);
+      osc.start(0);
+      osc.stop(this.audioContext.currentTime + 0.001);
+    } catch {
+      // 무시
     }
 
     if (this.audioContext.state === 'suspended') {
