@@ -69,6 +69,60 @@
               "재생 중 BPM/박자표 변경",
               "네트워크 지연 보정"
             ]
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://metronomdeul.site/#faq",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "정말 같은 박자로 동시에 들리나요?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "서버 시간 기준으로 비트를 스케줄하고 클라이언트마다 네트워크 왕복 시간(RTT)을 측정해 보정합니다. 일반적인 Wi-Fi 환경에서 ±5~10ms 오차로 동기화되어 실연주에 충분합니다."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "한 방에 몇 명까지 동시에 접속할 수 있나요?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "한 방당 최대 20명까지 동시에 접속 가능합니다. 합주, 합창, 군무 등 일반적인 그룹 활동에 충분한 규모입니다."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "방은 얼마나 유지되나요?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "방 생성 후 24시간 동안 유지되며, 그 이후엔 자동 삭제됩니다. 장기 사용이 필요하면 그때마다 새 방을 만들어 사용해주세요."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "어떤 브라우저에서 동작하나요?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Chrome, Safari, Firefox, Edge 모두 지원하며 모바일(iOS / Android)에서도 작동합니다. Web Audio API를 사용하므로 최신 버전 브라우저를 권장합니다."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "회원가입이나 결제가 필요한가요?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "아니요. 회원가입, 로그인, 결제 모두 필요 없습니다. 방을 만들고 링크 또는 QR 코드만 공유하면 바로 사용할 수 있습니다."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "인터넷 연결이 끊기면 어떻게 되나요?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "자동으로 재연결을 시도하며, 복구되는 즉시 다른 참가자들과 박자가 다시 동기화됩니다. 잠깐 끊겨도 합주를 멈출 필요 없습니다."
+                }
+              }
+            ]
           }
         ]
       }
