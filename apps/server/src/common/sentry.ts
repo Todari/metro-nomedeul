@@ -14,6 +14,7 @@ export function initSentry() {
     dsn,
     environment: process.env.NODE_ENV || 'development',
     tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE ?? 0.1),
+    initialScope: { tags: { service: 'metronomdeul' } },
   });
   initialized = true;
   logger.log('Sentry initialized');
