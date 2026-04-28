@@ -86,7 +86,7 @@ function App() {
     if (isPending) return;
     createRoom();
   };
-  const [showScanner] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
 
   useEffect(() => {
     if (isSuccess && data?.uuid) {
@@ -248,6 +248,15 @@ function App() {
           className={css({ w: 'full' })}
         >
           {isPending ? '방 만드는 중…' : '지금 바로 시작하기'}
+        </Button>
+
+        <Button
+          variant="secondary"
+          onClick={() => setShowScanner((prev) => !prev)}
+          aria-label={showScanner ? 'QR 스캐너 닫기' : 'QR 코드로 방 입장하기'}
+          className={css({ w: 'full' })}
+        >
+          {showScanner ? 'QR 스캐너 닫기' : 'QR 코드로 방 입장하기'}
         </Button>
 
         {showScanner && (
