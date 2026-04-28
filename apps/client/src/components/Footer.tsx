@@ -1,9 +1,13 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { css } from '../../styled-system/css';
 import { hstack, vstack } from '../../styled-system/patterns';
 
 const GITHUB_URL = 'https://github.com/Todari';
 const EMAIL = 'rhymint@gmail.com';
+const DONATION_BANK = '토스뱅크';
+const DONATION_ACCOUNT = '100117758134';
+const DONATION_HOLDER = '이태훈';
 
 const linkStyle = css({
   color: 'neutral.500',
@@ -24,10 +28,22 @@ const iconLinkStyle = css({
 });
 
 export function Footer() {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyAccount = async () => {
+    try {
+      await navigator.clipboard.writeText(DONATION_ACCOUNT);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // 클립보드 권한이 없으면 사용자가 직접 선택하도록 fallback
+    }
+  };
+
   return (
     <footer
       className={vstack({
-        gap: 3,
+        gap: 4,
         alignItems: 'center',
         py: 8,
         px: 4,
@@ -35,6 +51,101 @@ export function Footer() {
         fontSize: 'xs',
       })}
     >
+      <details
+        className={css({
+          w: 'full',
+          maxW: '320px',
+          bg: 'neutral.800',
+          rounded: 'xl',
+          overflow: 'hidden',
+          '&[open] > summary::after': { transform: 'rotate(180deg)' },
+        })}
+      >
+        <summary
+          className={css({
+            px: 4,
+            py: 3,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            color: 'neutral.300',
+            fontWeight: 'semibold',
+            cursor: 'pointer',
+            listStyle: 'none',
+            _hover: { bg: 'neutral.700' },
+            '&::-webkit-details-marker': { display: 'none' },
+            '&::after': {
+              content: '"⌄"',
+              color: 'neutral.500',
+              fontSize: 'md',
+              lineHeight: '1',
+              transition: 'transform 0.15s ease',
+            },
+          })}
+        >
+          <span>☕ 커피 한 잔 사주기</span>
+        </summary>
+        <div
+          className={vstack({
+            gap: 2,
+            alignItems: 'stretch',
+            px: 4,
+            py: 3,
+            borderTop: '1px solid',
+            borderColor: 'neutral.700',
+          })}
+        >
+          <p className={css({ color: 'neutral.400', lineHeight: '1.6' })}>
+            서비스가 도움이 되셨다면 한 잔의 응원을 보내주세요. 다음 업데이트에 큰 힘이 됩니다.
+          </p>
+          <div
+            className={hstack({
+              gap: 2,
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              bg: 'neutral.900',
+              px: 3,
+              py: 2,
+              rounded: 'md',
+            })}
+          >
+            <div className={vstack({ gap: 0, alignItems: 'flex-start' })}>
+              <span className={css({ color: 'neutral.500', fontSize: '2xs' })}>
+                {DONATION_BANK} · {DONATION_HOLDER}
+              </span>
+              <code
+                className={css({
+                  color: 'white',
+                  fontFamily: 'mono',
+                  fontSize: 'sm',
+                  letterSpacing: '0.5px',
+                })}
+              >
+                {DONATION_ACCOUNT}
+              </code>
+            </div>
+            <button
+              type="button"
+              onClick={handleCopyAccount}
+              className={css({
+                px: 3,
+                py: 1.5,
+                bg: copied ? 'green.600' : 'orange.600',
+                color: 'white',
+                rounded: 'md',
+                fontSize: 'xs',
+                fontWeight: 'semibold',
+                cursor: 'pointer',
+                transition: 'background-color 0.15s ease',
+                _hover: { bg: copied ? 'green.700' : 'orange.700' },
+              })}
+            >
+              {copied ? '복사됨!' : '복사'}
+            </button>
+          </div>
+        </div>
+      </details>
+
       <div className={hstack({ gap: 4, alignItems: 'center' })}>
         <Link to="/privacy" className={linkStyle}>
           개인정보처리방침
@@ -45,12 +156,7 @@ export function Footer() {
         </Link>
       </div>
 
-      <div
-        className={hstack({
-          gap: 2,
-          alignItems: 'center',
-        })}
-      >
+      <div className={hstack({ gap: 2, alignItems: 'center' })}>
         <span className={css({ color: 'neutral.600' })}>made by</span>
         <a
           href={GITHUB_URL}
