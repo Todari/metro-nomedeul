@@ -14,8 +14,6 @@ const SCENARIOS: Array<{ emoji: string; text: string }> = [
   { emoji: '🥁', text: '드럼이 박자를 제대로 맞추는지 검사할 때' },
   { emoji: '🎸', text: '기타가 드럼 소리를 안 듣고 지 맘대로 칠 때' },
   { emoji: '🎻', text: '베이스 소리가 안 들릴 때' },
-  { emoji: '🏫', text: '학원·레슨에서 강사와 학생이 같은 템포로 연습할 때' },
-  { emoji: '💃', text: '댄스팀이 음악 없이 카운트로 군무를 맞출 때' },
 ];
 
 const FAQ_ITEMS: Array<{ q: string; a: string }> = [
