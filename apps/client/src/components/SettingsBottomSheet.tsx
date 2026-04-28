@@ -88,7 +88,7 @@ export function SettingsBottomSheet(props: SettingsBottomSheetProps) {
                 onTapTempo();
               }}
             >
-              Tab
+              탭
             </Button>
           </div>
 
