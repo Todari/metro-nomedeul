@@ -58,6 +58,7 @@ export function MetronomeControls(props: MetronomeControlsProps) {
               cursor: isInitializing ? 'not-allowed' : 'pointer'
             })} 
             onClick={onStart}
+            aria-label={isInitializing ? '오디오 초기화 중...' : (serverIsPlaying ? '동기화하여 시작' : '시작')}
             title={isInitializing ? '오디오 초기화 중...' : (serverIsPlaying ? '동기화하여 시작' : '시작')}
             disabled={isInitializing}
           >
@@ -88,6 +89,7 @@ export function MetronomeControls(props: MetronomeControlsProps) {
               justifyContent: 'center'
             })}
             onClick={onStop}
+            aria-label="정지"
             title="정지"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -98,18 +100,19 @@ export function MetronomeControls(props: MetronomeControlsProps) {
         )}
 
         <Button
-          className={css({ 
-            p: 3, 
-            rounded: 'lg', 
-            bg: 'neutral.600', 
-            color: 'white', 
-            _hover: { bg: 'neutral.700' }, 
+          className={css({
+            p: 3,
+            rounded: 'lg',
+            bg: 'neutral.600',
+            color: 'white',
+            _hover: { bg: 'neutral.700' },
             _active: { bg: 'neutral.800' },
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center'
-          })} 
+          })}
           onClick={onSettingsClick}
+          aria-label="설정"
           title="설정"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -143,6 +146,7 @@ export function MetronomeControls(props: MetronomeControlsProps) {
             justifyContent: 'center'
           })}
           onClick={onShareClick}
+          aria-label="공유"
           title="공유"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
