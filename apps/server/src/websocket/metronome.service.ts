@@ -98,7 +98,7 @@ export class MetronomeService implements OnModuleDestroy {
 
     this.metronomeStates.set(roomUuid, state);
     this.broadcastMetronomeState(roomUuid);
-    this.startSyncTimers(roomUuid, effectiveTempo);
+    this.startSyncTimers(roomUuid);
   }
 
   stopMetronome(roomUuid: string) {
@@ -209,10 +209,8 @@ export class MetronomeService implements OnModuleDestroy {
     }
   }
 
-  private startSyncTimers(roomUuid: string, tempo: number) {
+  private startSyncTimers(roomUuid: string) {
     this.stopSyncTimers(roomUuid);
-
-    const beatIntervalMs = 60_000 / tempo;
 
     const generalTimer = setInterval(() => {
       const state = this.metronomeStates.get(roomUuid);

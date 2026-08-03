@@ -1,13 +1,11 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { css } from '../../styled-system/css';
 import { hstack, vstack } from '../../styled-system/patterns';
 
-const GITHUB_URL = 'https://github.com/Todari';
+const GITHUB_URL = 'https://github.com/Todari/metro-nomedeul';
 const EMAIL = 'rhymint@gmail.com';
 const DONATION_BANK = '토스뱅크';
 const DONATION_ACCOUNT = '100117758134';
-const DONATION_HOLDER = '이태훈';
 
 const linkStyle = css({
   color: 'neutral.500',
@@ -111,7 +109,7 @@ export function Footer() {
           >
             <div className={vstack({ gap: 0, alignItems: 'flex-start' })}>
               <span className={css({ color: 'neutral.500', fontSize: '2xs' })}>
-                {DONATION_BANK} · {DONATION_HOLDER}
+                {DONATION_BANK} · 후원 계좌
               </span>
               <code
                 className={css({
@@ -147,13 +145,13 @@ export function Footer() {
       </details>
 
       <div className={hstack({ gap: 4, alignItems: 'center' })}>
-        <Link to="/privacy" className={linkStyle}>
+        <a href="/privacy" className={linkStyle}>
           개인정보처리방침
-        </Link>
+        </a>
         <span className={css({ color: 'neutral.700' })}>·</span>
-        <Link to="/terms" className={linkStyle}>
+        <a href="/terms" className={linkStyle}>
           이용약관
-        </Link>
+        </a>
       </div>
 
       <div className={hstack({ gap: 2, alignItems: 'center' })}>

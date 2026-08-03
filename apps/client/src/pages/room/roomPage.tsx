@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { css } from '../../../styled-system/css';
 import { vstack } from '../../../styled-system/patterns';
-import { useParams } from 'react-router-dom';
 import { useMetronome } from '../../hooks/useMetronome';
 import { MetronomeControls } from '../../components/MetronomeControls';
 import { SettingsBottomSheet } from '../../components/SettingsBottomSheet';
@@ -11,9 +10,7 @@ import { Header } from '../../components/Header';
 import { getRoom } from '../../apis/room';
 import { trackEvent } from '../../ga';
 
-export const RoomPage = () => {
-  const { uuid } = useParams();
-
+export const RoomPage = ({ uuid }: { uuid: string }) => {
   const {
     isPlaying,
     tempo,
@@ -30,7 +27,7 @@ export const RoomPage = () => {
     initializeAudio,
     primeAudioContext,
     requestSync,
-  } = useMetronome(uuid ?? '');
+  } = useMetronome(uuid);
 
   // 방 존재 여부 확인
   const [roomError, setRoomError] = useState<'not_found' | 'error' | null>(

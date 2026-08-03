@@ -64,7 +64,7 @@ export const useMetronome = (roomUuid: string) => {
       metronomeRef.current?.destroy();
       metronomeRef.current = null;
     };
-  }, []);
+  }, [clockOffset]);
 
   const initializeAudio = useCallback(async (): Promise<boolean> => {
     const metronome = metronomeRef.current;

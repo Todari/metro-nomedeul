@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { css } from "../styled-system/css";
 import { hstack, vstack } from "../styled-system/patterns";
 import { useRequestPostRoom } from "./hooks/useRequestPostRoom";
-import { useNavigate } from "react-router-dom";
 import { QrScanner } from "./components/QrScanner";
 import { Button } from "./components/Button";
 import { Header } from "./components/Header";
@@ -80,8 +79,6 @@ const SectionTitle = ({ children }: { children: string }) => (
 
 function App() {
   const { mutate: createRoom, data, isSuccess, isPending } = useRequestPostRoom();
-  const navigate = useNavigate();
-
   const handleCreateRoom = () => {
     if (isPending) return;
     createRoom();
@@ -91,9 +88,9 @@ function App() {
   useEffect(() => {
     if (isSuccess && data?.uuid) {
       trackEvent('create_room');
-      navigate(`/room/${data.uuid}`);
+      window.location.assign(`/room/${data.uuid}`);
     }
-  }, [isSuccess, data, navigate]);
+  }, [isSuccess, data]);
 
   return (
     <div className={vstack({ alignItems: 'stretch', gap: 0 })}>
@@ -273,13 +270,13 @@ function App() {
                   const idx = parts.findIndex((p) => p === 'room');
                   if (idx >= 0 && parts[idx + 1]) {
                     const roomId = parts[idx + 1];
-                    navigate(`/room/${roomId}`);
+                    window.location.assign(`/room/${encodeURIComponent(roomId)}`);
                   } else {
                     alert('올바른 방 QR 코드가 아닙니다.');
                   }
                 } catch {
                   if (text.length === 8) {
-                    navigate(`/room/${text}`);
+                    window.location.assign(`/room/${encodeURIComponent(text)}`);
                   } else {
                     alert('올바른 방 ID가 아닙니다. 8자리 코드를 확인해주세요.');
                   }
