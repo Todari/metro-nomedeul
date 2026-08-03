@@ -17,11 +17,11 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
-          script_stop: true
           command_timeout: 10m
           script: |
+            set -euo pipefail
             cd ~/metro-nomedeul
-            git pull origin main
+            git pull --ff-only origin main
             cd ~
             docker compose up -d --build metronomdeul-server
             sleep 15
