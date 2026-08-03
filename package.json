@@ -1,6 +1,26 @@
 {
   "name": "metro-nomedeul",
   "private": true,
+  "version": "1.0.0",
+  "description": "여러 연주자의 이어폰에서 같은 클릭을 재생하는 실시간 동기화 메트로놈",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Todari/metro-nomedeul.git"
+  },
+  "homepage": "https://metronomdeul.site",
+  "bugs": {
+    "url": "https://github.com/Todari/metro-nomedeul/issues"
+  },
+  "keywords": [
+    "metronome",
+    "web-audio",
+    "socket.io",
+    "real-time",
+    "react",
+    "nestjs",
+    "typescript"
+  ],
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
@@ -11,7 +31,7 @@
     "build:server": "turbo run build --filter=@metro-nomedeul/server"
   },
   "devDependencies": {
-    "turbo": "^2"
+    "turbo": "^2.10.8"
   },
   "packageManager": "pnpm@9.15.0"
 }

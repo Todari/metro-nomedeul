@@ -1,91 +1,106 @@
-# 메트로놈들 (Metro-nomedeul)
+# 메트로놈들
 
-> 밴드 합주할 때, 모두가 같은 클릭을 듣고 싶다면?
+각자의 이어폰으로 같은 클릭을 듣는 실시간 합주 메트로놈입니다. 방을 만들고 QR이나 링크를
+공유하면 여러 기기가 서버 시각을 기준으로 같은 박자를 재생합니다.
 
-**메트로놈들**은 여러 사람이 각자의 이어폰으로 **동시에 같은 메트로놈 클릭**을 들을 수 있는 실시간 동기화 웹앱입니다.
+[![서비스](https://img.shields.io/badge/서비스-metronomdeul.site-f97316)](https://metronomdeul.site)
+[![Deploy Server](https://github.com/Todari/metro-nomedeul/actions/workflows/deploy-server.yml/badge.svg)](https://github.com/Todari/metro-nomedeul/actions/workflows/deploy-server.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**사이트**: https://metronomdeul.site
+## 해결하는 문제
 
-### 이런 상황에서 써보세요
-
-- 보컬이 이어폰 끼고 노래할 때 — 다른 멤버와 같은 클릭을 공유
-- 드러머 박자 체크할 때 — 모두가 같은 기준으로 듣기
-- 합주실에서 클릭 트랙 없이 연습할 때 — 폰만 있으면 OK
-
-### 사용 방법
-
-1. **방 만들기** — 사이트에 접속해서 "방 생성하기" 클릭
-2. **공유하기** — QR 코드나 링크를 멤버들에게 공유
-3. **함께 연주** — 템포/박자 설정 후 재생하면 모든 기기에서 동기화된 클릭이 재생됩니다
-
-## 폴더 구조
-```
-apps/
-  client/   # React 19 + Vite + PandaCSS
-  server/   # NestJS + Prisma + PostgreSQL + Socket.IO
-packages/
-  shared/   # 공유 타입, 상수 (프론트/백 공용)
-docs/       # 전체 문서(아키텍처, API, 환경, 배포 등)
-```
-
-## 빠른 시작 (로컬)
-
-### 사전 요구사항
-- Node.js 20+
-- pnpm 9+
-- Docker & Docker Compose (DB용)
-
-### 1) 의존성 설치
-```bash
-pnpm install
-```
-
-### 2) DB 실행 (PostgreSQL)
-```bash
-docker compose up -d postgres
-```
-
-### 3) DB 마이그레이션
-```bash
-cd apps/server
-cp .env.example .env
-npx prisma migrate dev
-cd ../..
-```
-
-### 4) 개발 서버 실행
-```bash
-# 전체 실행 (클라이언트 + 서버)
-pnpm dev
-
-# 또는 개별 실행
-pnpm dev:client   # http://localhost:5173
-pnpm dev:server   # http://localhost:3000
-```
+같은 BPM 숫자를 맞추는 것만으로는 합주 중 실제 클릭 시점이 일치하지 않습니다. 네트워크
+지연, 기기별 시계 차이, 브라우저 오디오 활성화 시점 때문에 시간이 지날수록 박자가 어긋날 수
+있습니다. 메트로놈들은 서버 시간 보정과 Web Audio 선행 스케줄링을 결합해 이 차이를 줄입니다.
 
 ## 주요 기능
-- **실시간 동기화** — 방에 접속한 모든 기기에서 동시에 같은 클릭이 재생됩니다
-- **QR 코드 공유** — 방을 만들면 QR 코드가 생성되어 쉽게 공유할 수 있습니다
-- **템포/박자 조절** — BPM과 박자(2~7박)를 자유롭게 변경할 수 있습니다
-- **탭 템포** — 화면을 탭하여 원하는 템포를 직접 입력할 수 있습니다
-- **시계 보정** — 서버 시간 기준 동기화로 기기 간 시차를 자동 보정합니다
 
-## 기술 스택
-- **프론트엔드**: React 19, Vite, PandaCSS, Socket.IO Client
-- **백엔드**: NestJS, Prisma, PostgreSQL, Socket.IO
-- **공유**: TypeScript 모노레포 (pnpm workspaces + Turborepo)
-- **인프라**: Vercel(프론트), Docker Compose(백엔드)
+- 가입 없이 방을 만들고 QR 코드·초대 링크로 참여
+- 방장의 재생·정지, BPM, 박자 변경을 모든 참여자에게 실시간 동기화
+- 서버 시각 오프셋과 전송 지연을 반영한 재생 위치 보정
+- JavaScript timer와 분리된 Web Audio API 기반 클릭 예약
+- 연결이 끊긴 뒤 현재 방 상태로 복귀하는 재접속 흐름
+- iOS 브라우저의 사용자 제스처·AudioContext 활성화 경합 대응
+- 탭 템포와 2–7박자 설정
 
-## 문서
-- 전체 목차: [docs/README.md](./docs/README.md)
-- 아키텍처: [docs/architecture.md](./docs/architecture.md)
-- API/프로토콜: [docs/api.md](./docs/api.md)
-- 환경 설정: [docs/environment.md](./docs/environment.md)
-- 배포 가이드: [docs/deployment.md](./docs/deployment.md)
+## 동작 구조
 
-## 개발 가이드
-- 브랜치/커밋 규칙, PR 템플릿 등은 [docs/collaboration.md](./docs/collaboration.md) 및 [docs/conventions.md](./docs/conventions.md) 참고
-- 기능/프로토콜/환경 변경 시 반드시 관련 문서를 함께 갱신하세요
+```text
+React + Vite client
+  ├─ Web Audio scheduler
+  └─ Socket.IO client
+            │
+            ▼
+NestJS + Socket.IO server
+  ├─ room state / sync events
+  └─ Prisma
+            │
+            ▼
+       PostgreSQL
+```
+
+서버가 재생 상태와 기준 시각을 공유하고 클라이언트는 왕복 시간을 이용해 로컬 시계와의
+오프셋을 추정합니다. 실제 클릭은 `AudioContext.currentTime` 기준으로 미리 예약해 이벤트 루프
+지터가 오디오 타이밍으로 전파되는 것을 줄입니다.
+
+## 저장소 구조
+
+| 경로 | 역할 | 주요 기술 |
+| --- | --- | --- |
+| `apps/client` | 랜딩, 방 생성·참여, 메트로놈 UI | React 19, Vite, Panda CSS, Web Audio |
+| `apps/server` | 방 상태와 실시간 동기화 API | NestJS, Socket.IO, Prisma |
+| `packages/shared` | 클라이언트·서버 공유 계약 | TypeScript |
+| `docs` | 아키텍처, API, 환경, 배포 문서 | Markdown |
+
+## 로컬 실행
+
+Node.js 20+, pnpm 9+, Docker가 필요합니다.
+
+```bash
+pnpm install
+docker compose up -d postgres
+cp apps/server/.env.example apps/server/.env
+pnpm --filter @metro-nomedeul/server prisma:generate
+pnpm --filter @metro-nomedeul/server prisma:migrate
+pnpm dev
+```
+
+- 클라이언트: `http://localhost:5173`
+- 서버: `http://localhost:3000`
+
+주요 환경변수:
+
+| 변수 | 역할 |
+| --- | --- |
+| `DATABASE_URL` | PostgreSQL 연결 문자열 |
+| `ALLOWED_ORIGIN` | 서버가 허용할 클라이언트 origin |
+| `VITE_API_URL` | 클라이언트 HTTP API 주소 |
+| `VITE_WS_URL` | 클라이언트 Socket.IO 주소 |
+| `SENTRY_DSN` | 선택적 서버 오류 추적 |
+
+실제 값은 커밋하지 말고 `.env.example`을 복사한 로컬 `.env`에서 관리하세요.
+
+## 검증
+
+```bash
+pnpm lint
+pnpm build
+pnpm --filter @metro-nomedeul/server test
+```
+
+프로토콜이나 환경 설정을 바꾸면 [`docs`](docs/README.md)의 관련 문서도 함께 갱신합니다.
+
+## 배포
+
+- 클라이언트: Vercel
+- 서버: Docker Compose + GitHub Actions SSH 배포
+- 프로덕션: [metronomdeul.site](https://metronomdeul.site)
+
+## 보안
+
+운영 환경변수와 배포 자격증명은 저장소 밖에서 관리합니다. 취약점은 공개 Issue 대신
+[보안 정책](SECURITY.md)의 비공개 제보 경로를 이용해 주세요.
 
 ## 라이선스
-프로젝트 루트의 LICENSE 파일을 참고하세요.
+
+[MIT](LICENSE)

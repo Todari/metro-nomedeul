@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import type { Server, Socket } from 'socket.io';
 import { MetronomeService } from './metronome.service';
 import { WS_EVENTS } from '@metro-nomedeul/shared';
 
@@ -27,7 +28,7 @@ describe('MetronomeService', () => {
 
     service = module.get<MetronomeService>(MetronomeService);
     mockServer = createMockServer();
-    service.setServer(mockServer as any);
+    service.setServer(mockServer as unknown as Server);
     jest.clearAllMocks();
   });
 
@@ -37,7 +38,7 @@ describe('MetronomeService', () => {
 
   describe('sendInitialState', () => {
     it('should send default state when room has no state', () => {
-      const client = createMockSocket() as any;
+      const client = createMockSocket() as unknown as Socket;
 
       service.sendInitialState(client, 'room-1');
 
@@ -55,7 +56,7 @@ describe('MetronomeService', () => {
     });
 
     it('should send existing state as initialState when room has state', () => {
-      const client = createMockSocket() as any;
+      const client = createMockSocket() as unknown as Socket;
       service.startMetronome('room-1', 140, 3);
 
       service.sendInitialState(client, 'room-1');

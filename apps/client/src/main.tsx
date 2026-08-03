@@ -5,8 +5,7 @@ import { css } from "../styled-system/css";
 import { container } from "../styled-system/patterns";
 import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { RouterProvider } from 'react-router-dom';
-import { router } from './routes.tsx';
+import { AppRouter } from './routes.tsx';
 import { initSentry, Sentry } from './utils/sentry';
 import { ErrorFallback } from './components/ErrorFallback';
 
@@ -29,7 +28,7 @@ createRoot(document.getElementById('root')!).render(
           }
         >
           <div className={container({ maxW: '720px' })}>
-            <RouterProvider router={router} />
+            <AppRouter />
           </div>
         </div>
       </QueryClientProvider>
