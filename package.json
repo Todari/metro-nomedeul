@@ -33,5 +33,11 @@
   "devDependencies": {
     "turbo": "^2.10.8"
   },
+  "pnpm": {
+    "overrides": {
+      "picomatch": "^4.0.5",
+      "postcss": "^8.5.25"
+    }
+  },
   "packageManager": "pnpm@9.15.0"
 }
