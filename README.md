@@ -3,7 +3,7 @@
 각자의 이어폰으로 같은 클릭을 듣는 실시간 합주 메트로놈입니다. 방을 만들고 QR이나 링크를
 공유하면 여러 기기가 서버 시각을 기준으로 같은 박자를 재생합니다.
 
-[![서비스](https://img.shields.io/badge/서비스-metronomdeul.site-f97316)](https://metronomdeul.site)
+[![서비스](https://img.shields.io/badge/서비스-metronome.todari.dev-f97316)](https://metronome.todari.dev)
 [![Deploy Server](https://github.com/Todari/metro-nomedeul/actions/workflows/deploy-server.yml/badge.svg)](https://github.com/Todari/metro-nomedeul/actions/workflows/deploy-server.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -94,7 +94,7 @@ pnpm --filter @metro-nomedeul/server test
 
 - 클라이언트: Vercel
 - 서버: Docker Compose + GitHub Actions SSH 배포
-- 프로덕션: [metronomdeul.site](https://metronomdeul.site)
+- 프로덕션: [metronome.todari.dev](https://metronome.todari.dev)
 
 ## 보안
 

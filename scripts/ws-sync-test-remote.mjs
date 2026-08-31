@@ -10,8 +10,8 @@
 import { io } from 'socket.io-client';
 import { exec } from 'child_process';
 
-const API_URL = 'https://api.metronomdeul.site';
-const WS_URL = 'wss://api.metronomdeul.site';
+const API_URL = 'https://api.metronome.todari.dev';
+const WS_URL = 'wss://api.metronome.todari.dev';
 const TEST_TEMPO = 120;
 const TEST_BEATS = 4;
 const TEST_DURATION_MS = 12000;
