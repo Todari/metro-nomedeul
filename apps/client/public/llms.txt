@@ -23,5 +23,5 @@
 ## 운영 주체
 
 - 운영자: Todari (https://todari.dev)
-- 사이트: https://metronomdeul.site
+- 사이트: https://metronome.todari.dev
 - 무료 / 회원가입 불필요

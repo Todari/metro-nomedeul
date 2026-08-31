@@ -4,8 +4,8 @@
  */
 import { io } from 'socket.io-client';
 
-const WS_URL = 'wss://api.metronomdeul.site';
-const API_URL = 'https://api.metronomdeul.site';
+const WS_URL = 'wss://api.metronome.todari.dev';
+const API_URL = 'https://api.metronome.todari.dev';
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 

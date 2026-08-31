@@ -1,11 +1,11 @@
 /**
  * Custom E2E — verify the specific changes made in this session.
- * Target: production (api.metronomdeul.site).
+ * Target: production (api.metronome.todari.dev).
  */
 import { io } from 'socket.io-client';
 
-const API_URL = 'https://api.metronomdeul.site';
-const WS_URL = 'wss://api.metronomdeul.site';
+const API_URL = 'https://api.metronome.todari.dev';
+const WS_URL = 'wss://api.metronome.todari.dev';
 
 let passed = 0;
 let failed = 0;

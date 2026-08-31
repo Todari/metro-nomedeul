@@ -44,7 +44,7 @@ docker compose up -d --build
 ```
 PORT=3000
 DATABASE_URL=postgresql://metronomdeul:metronomdeul@localhost:5432/metronomdeul
-ALLOWED_ORIGIN=http://localhost:5173,http://localhost:3000,https://metronomdeul.site,https://www.metronomdeul.site
+ALLOWED_ORIGIN=http://localhost:5173,http://localhost:3000,https://metronome.todari.dev
 ```
 
 ### 인스턴스 구성

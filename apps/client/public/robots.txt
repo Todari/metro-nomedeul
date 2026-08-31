@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://metronomdeul.site/sitemap.xml
+Sitemap: https://metronome.todari.dev/sitemap.xml
