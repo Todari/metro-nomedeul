@@ -32,6 +32,7 @@ export const useSocket = ({
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const clockOffsetRef = useRef(0);
+  const isClockSyncedRef = useRef(false);
 
   const onMetronomeStateRef = useRef(onMetronomeState);
   const onBeatSyncRef = useRef(onBeatSync);
@@ -58,7 +59,6 @@ export const useSocket = ({
       query: { roomUuid, userId },
       transports: ['websocket'],
       reconnection: true,
-      reconnectionAttempts: 10,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 30000,
     });
@@ -101,6 +101,7 @@ export const useSocket = ({
             cleanup();
             offsets.sort((a, b) => a - b);
             clockOffsetRef.current = offsets[Math.floor(offsets.length / 2)];
+            isClockSyncedRef.current = true;
             resolve();
           }
         };
@@ -154,20 +155,35 @@ export const useSocket = ({
       );
     });
 
-    socket.on('disconnect', () => {
+    // 서버가 먼저 끊으면(방 정원 초과·일시적 DB 오류) socket.io는 자동 재연결하지 않아
+    // 새로고침 전까지 먹통이 된다. 방이 사라진 경우가 아니면 잠시 뒤 직접 다시 붙는다.
+    let roomGone = false;
+    let serverDisconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    socket.on('error', (data: { message?: string }) => {
+      if (data?.message === 'Room not found') roomGone = true;
+    });
+
+    socket.on('disconnect', (reason) => {
       setIsConnected(false);
       if (resyncIntervalId) {
         clearInterval(resyncIntervalId);
         resyncIntervalId = null;
       }
       activeSyncCleanup?.();
+      if (reason === 'io server disconnect' && !roomGone) {
+        serverDisconnectTimer = setTimeout(() => socket.connect(), 3000);
+      }
     });
 
+    // 첫 시계 동기화 전 상태는 오프셋 0으로 계산돼 박자가 어긋나므로 버린다.
+    // 동기화가 끝나면 위에서 REQUEST_SYNC로 최신 상태를 다시 받는다.
     socket.on(WS_EVENTS.METRONOME_STATE, (data: MetronomeState) => {
+      if (!isClockSyncedRef.current) return;
       onMetronomeStateRef.current?.(data);
     });
 
     socket.on(WS_EVENTS.BEAT_SYNC, (data: MetronomeState) => {
+      if (!isClockSyncedRef.current) return;
       onBeatSyncRef.current?.(data);
     });
 
@@ -177,6 +193,7 @@ export const useSocket = ({
 
     return () => {
       if (resyncIntervalId) clearInterval(resyncIntervalId);
+      if (serverDisconnectTimer) clearTimeout(serverDisconnectTimer);
       activeSyncCleanup?.();
       socket.removeAllListeners();
       socket.disconnect();

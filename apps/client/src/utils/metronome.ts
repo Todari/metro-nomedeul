@@ -141,14 +141,22 @@ export class Metronome {
     }
   }
 
+  /**
+   * iOS는 제스처 밖에서 부른 resume()을 영원히 pending으로 둘 수 있다. 그대로 await하면
+   * isStarting·isInitializing이 풀리지 않아 재생 버튼이 먹통이 되므로 기다림에 상한을 둔다.
+   * 실패하거나 시간이 지나면 호출부가 state를 보고 다음 제스처에서 다시 시도한다.
+   */
+  private resumeWithTimeout(timeoutMs = 1000): Promise<void> {
+    if (!this.audioContext) return Promise.resolve();
+    return Promise.race([
+      this.audioContext.resume().catch(() => {}),
+      new Promise<void>((resolve) => setTimeout(resolve, timeoutMs)),
+    ]);
+  }
+
   public async resumeIfSuspended(): Promise<void> {
-    if (!this.audioContext) return;
-    if (this.audioContext.state === 'suspended') {
-      try {
-        await this.audioContext.resume();
-      } catch {
-        // 백그라운드에서 자동 suspend된 경우 사용자 제스처 없으면 실패할 수 있음 — 다음 제스처에서 재시도
-      }
+    if (this.audioContext?.state === 'suspended') {
+      await this.resumeWithTimeout();
     }
   }
 
@@ -165,6 +173,8 @@ export class Metronome {
 
     // Track latest server play state for async start race condition
     this.latestServerIsPlaying = state.isPlaying;
+    // 방이 정지됐으면 제스처를 기다리던 재생 상태도 버린다. 남겨 두면 다음 탭에서 옛 상태로 혼자 재생된다.
+    if (!state.isPlaying) this.pendingServerState = null;
 
     if (state.tempo && state.tempo !== this.tempo) {
       this.applyTempoChange(state.tempo);
@@ -282,7 +292,7 @@ export class Metronome {
     }
 
     if (this.audioContext.state === 'suspended') {
-      await this.audioContext.resume().catch(() => {});
+      await this.resumeWithTimeout();
     }
 
     // 모바일에서 사용자 제스처 없이 resume 실패 시, 상태만 저장
@@ -303,11 +313,7 @@ export class Metronome {
     if (!this.audioContext) return false;
 
     if (this.audioContext.state === 'suspended') {
-      try {
-        await this.audioContext.resume();
-      } catch {
-        return false;
-      }
+      await this.resumeWithTimeout();
     }
 
     if (this.audioContext.state !== 'running') return false;
@@ -328,20 +334,24 @@ export class Metronome {
     return this.pendingServerState?.isPlaying === true;
   }
 
-  public async start(serverState?: MetronomeState) {
-    if (this.isStarting || this.isPlaying) return;
+  /** 시작했으면 로컬 시계 기준 시작 시각(ms), 이미 재생 중이거나 시작하지 못했으면 null */
+  public async start(serverState?: MetronomeState): Promise<number | null> {
+    if (this.isStarting || this.isPlaying) return null;
     this.isStarting = true;
+    // 사용자가 직접 시작하면 서버 확인을 기다리지 않고 계속 재생한다.
+    // 이후 서버가 정지 상태를 보내면 아래 가드나 handleServerState가 멈춘다.
+    if (!serverState) this.latestServerIsPlaying = true;
 
     try {
       if (!this.audioContext) {
-        if (!this.createAudioContext()) return;
+        if (!this.createAudioContext()) return null;
       }
-      if (!this.audioContext) return;
+      if (!this.audioContext) return null;
 
       await this.initialize();
 
       if (this.audioContext.state === 'suspended') {
-        await this.audioContext.resume().catch(() => {});
+        await this.resumeWithTimeout();
       }
 
       this.isPlaying = true;
@@ -384,7 +394,9 @@ export class Metronome {
       // If server sent stop while we were async starting, stop immediately
       if (!this.latestServerIsPlaying) {
         this.stopInternal();
+        return null;
       }
+      return this.startTime;
     } finally {
       this.isStarting = false;
     }
