@@ -1,5 +1,6 @@
 /**
- * 재생을 누른 사람의 첫 박이 서버 박자 기준과 어긋나 튀지 않는지 검사한다.
+ * 재생을 누른 사람의 첫 박이 서버 박자 기준과 어긋나 튀지 않는지, iOS처럼 resume()이
+ * 끝나지 않아도 start()가 풀려 재생 버튼이 먹통이 되지 않는지 검사한다.
  * 서버·브라우저 없이 가상 시계와 가짜 AudioContext로 실제 클라이언트 Metronome을 돌린다.
  *
  *   node --experimental-strip-types --no-warnings scripts/metronome-sync-check.mjs
@@ -10,6 +11,7 @@ let T = 1_000_000; // 로컬 벽시계(ms)
 let queue = [];
 let seq = 0;
 const at = (time, cb) => (queue.push({ time, id: ++seq, cb }), seq);
+const realNow = Date.now;
 Date.now = () => Math.floor(T);
 globalThis.window = globalThis;
 globalThis.requestAnimationFrame = (cb) => at(T + 16.67, cb);
@@ -112,3 +114,19 @@ clicks.forEach((t, i) => {
   assert.ok(Math.abs(t - grid0 - beat * SPB) <= 2, `서버 박자와 어긋남: ${offsets.join(', ')}`);
 });
 console.log(`ok: 첫 박부터 ${clicks.length}박 모두 서버 박자 기준 ±2ms (${offsets.join(', ')})`);
+
+// iOS는 제스처 밖에서 부른 resume()을 끝내지 않을 수 있다. 그래도 start()는 풀려야 한다.
+// 안 풀리면 isStarting이 고착돼 재생 버튼이 새로고침 전까지 먹통이 된다.
+Date.now = realNow;
+const hung = new Metronome();
+hung.primeAudioContextSync();
+hung.audioContext.state = 'suspended';
+hung.audioContext.resume = () => new Promise(() => {});
+const settled = await Promise.race([
+  hung.start().then(() => 'settled'),
+  new Promise((resolve) => setTimeout(() => resolve('hung'), 6000)),
+]);
+assert.equal(settled, 'settled', 'resume()이 끝나지 않을 때 start()가 영원히 멈춤');
+assert.equal(hung.isStarting, false, 'isStarting 고착');
+hung.destroy();
+console.log('ok: resume()이 끝나지 않아도 start()가 풀림');

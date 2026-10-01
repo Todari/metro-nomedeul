@@ -136,12 +136,13 @@ export const useMetronome = (roomUuid: string) => {
 
     // 먼저 로컬에서 시작하고, 실제 시작 시각을 서버 시계로 바꿔 보낸다.
     // 서버가 이 값을 박자 기준으로 써야 누른 사람의 박자가 첫 동기화 때 튀지 않는다.
+    // 로컬 시작이 안 됐어도(이미 시작 중·도중에 정지 수신) START는 보내서 방 상태는 서버가 정하게 한다.
     const localStartTime = await metronomeRef.current.start();
-    if (localStartTime === null) return;
     emit(WS_EVENTS.START_METRONOME as 'startMetronome', {
       tempo,
       beats,
-      startTime: localStartTime + clockOffset.current,
+      startTime:
+        localStartTime === null ? undefined : localStartTime + clockOffset.current,
     });
   }, [isAudioReady, initializeAudio, tempo, beats, emit, clockOffset]);
 

@@ -59,7 +59,6 @@ export const useSocket = ({
       query: { roomUuid, userId },
       transports: ['websocket'],
       reconnection: true,
-      reconnectionAttempts: 10,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 30000,
     });
@@ -156,13 +155,24 @@ export const useSocket = ({
       );
     });
 
-    socket.on('disconnect', () => {
+    // 서버가 먼저 끊으면(방 정원 초과·일시적 DB 오류) socket.io는 자동 재연결하지 않아
+    // 새로고침 전까지 먹통이 된다. 방이 사라진 경우가 아니면 잠시 뒤 직접 다시 붙는다.
+    let roomGone = false;
+    let serverDisconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    socket.on('error', (data: { message?: string }) => {
+      if (data?.message === 'Room not found') roomGone = true;
+    });
+
+    socket.on('disconnect', (reason) => {
       setIsConnected(false);
       if (resyncIntervalId) {
         clearInterval(resyncIntervalId);
         resyncIntervalId = null;
       }
       activeSyncCleanup?.();
+      if (reason === 'io server disconnect' && !roomGone) {
+        serverDisconnectTimer = setTimeout(() => socket.connect(), 3000);
+      }
     });
 
     // 첫 시계 동기화 전 상태는 오프셋 0으로 계산돼 박자가 어긋나므로 버린다.
@@ -183,6 +193,7 @@ export const useSocket = ({
 
     return () => {
       if (resyncIntervalId) clearInterval(resyncIntervalId);
+      if (serverDisconnectTimer) clearTimeout(serverDisconnectTimer);
       activeSyncCleanup?.();
       socket.removeAllListeners();
       socket.disconnect();
