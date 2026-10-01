@@ -193,6 +193,15 @@ describe('MetronomeService', () => {
         beats: 4,
       });
     });
+
+    it('should use the requested start time only when it is within 1s of now', () => {
+      const now = Date.now();
+      service.startMetronome('near-room', 120, 4, now - 40);
+      expect(service.getState('near-room')?.startTime).toBe(now - 40);
+
+      service.startMetronome('far-room', 120, 4, now - 5_000);
+      expect(service.getState('far-room')?.startTime).toBeGreaterThanOrEqual(now);
+    });
   });
 
   describe('requestSync', () => {

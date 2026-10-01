@@ -134,9 +134,16 @@ export const useMetronome = (roomUuid: string) => {
     }
     setAudioError(null);
 
-    emit(WS_EVENTS.START_METRONOME as 'startMetronome', { tempo, beats });
-    await metronomeRef.current.start();
-  }, [isAudioReady, initializeAudio, tempo, beats, emit]);
+    // 먼저 로컬에서 시작하고, 실제 시작 시각을 서버 시계로 바꿔 보낸다.
+    // 서버가 이 값을 박자 기준으로 써야 누른 사람의 박자가 첫 동기화 때 튀지 않는다.
+    const localStartTime = await metronomeRef.current.start();
+    if (localStartTime === null) return;
+    emit(WS_EVENTS.START_METRONOME as 'startMetronome', {
+      tempo,
+      beats,
+      startTime: localStartTime + clockOffset.current,
+    });
+  }, [isAudioReady, initializeAudio, tempo, beats, emit, clockOffset]);
 
   const stopMetronome = useCallback(() => {
     if (!metronomeRef.current) return;

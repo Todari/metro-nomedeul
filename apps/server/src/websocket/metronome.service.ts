@@ -9,6 +9,8 @@ import {
   WS_CONFIG,
 } from '@metro-nomedeul/shared';
 
+const MAX_START_SKEW_MS = 1000;
+
 interface RoomSyncTimers {
   generalTimer: ReturnType<typeof setInterval> | null;
   beatTimer: ReturnType<typeof setTimeout> | null;
@@ -61,7 +63,17 @@ export class MetronomeService implements OnModuleDestroy {
     this.logger.log(`Initial state sent to ${client.id} (room: ${roomUuid})`);
   }
 
-  startMetronome(roomUuid: string, tempo?: number, beats?: number) {
+  /**
+   * requestedStartTime: 시작한 클라이언트가 실제로 첫 박을 낸 시각(서버 시계 추정).
+   * 이 값을 박자 기준으로 삼아야 누른 사람의 첫 박 간격이 업로드 지연만큼 늘어나지 않는다.
+   * 시계 동기화 전처럼 크게 어긋난 값은 무시하고 수신 시각을 쓴다.
+   */
+  startMetronome(
+    roomUuid: string,
+    tempo?: number,
+    beats?: number,
+    requestedStartTime?: number,
+  ) {
     const existing = this.metronomeStates.get(roomUuid);
 
     // Client's explicit value wins, fall back to existing state, then default
@@ -84,13 +96,18 @@ export class MetronomeService implements OnModuleDestroy {
     this.stopSyncTimers(roomUuid);
 
     const now = Date.now();
+    const startTime =
+      requestedStartTime !== undefined &&
+      Math.abs(requestedStartTime - now) <= MAX_START_SKEW_MS
+        ? requestedStartTime
+        : now;
 
     const state: MetronomeState = {
       isPlaying: true,
       tempo: effectiveTempo,
       beats: effectiveBeats,
       currentBeat: 0,
-      startTime: now,
+      startTime,
       serverTime: now,
       roomUuid,
       type: 'metronomeState',

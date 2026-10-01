@@ -57,7 +57,7 @@
 
 | 이벤트 | 페이로드 |
 |--------|----------|
-| `startMetronome` | `{ tempo?: number, beats?: number }` |
+| `startMetronome` | `{ tempo?: number, beats?: number, startTime?: number }` |
 | `stopMetronome` | `(none)` |
 | `changeTempo` | `{ tempo: number }` |
 | `changeBeats` | `{ beats: number }` |
@@ -66,6 +66,7 @@
 
 - 서버는 이벤트마다 소켓당 token-bucket 기반 rate limit을 적용합니다(예: `changeTempo`는 초당 20회).
 - `startMetronome`/`stopMetronome`는 서버 인메모리 상태를 변경하고 방의 모든 소켓에 `metronomeState`를 브로드캐스트합니다.
+- `startMetronome.startTime`은 시작한 클라이언트가 첫 박을 낸 시각(서버 시계 기준 ms)입니다. 서버 수신 시각과 1초 이내면 이 값을 방의 박자 기준으로 쓰고, 아니면 수신 시각을 씁니다. 그래야 누른 사람의 첫 박 간격이 업로드 지연만큼 늘어나지 않습니다.
 - `changeTempo`/`changeBeats`는 **재생 중이어도 위상을 유지한 채 값만 교체합니다** — 이전 구현처럼 재생을 정지시키지 않습니다.
 
 ### 방 정원/유지 시간

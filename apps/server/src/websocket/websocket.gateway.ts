@@ -212,7 +212,7 @@ export class MetronomeGateway
   @SubscribeMessage(WS_EVENTS.START_METRONOME)
   handleStartMetronome(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { tempo?: number; beats?: number },
+    @MessageBody() data: { tempo?: number; beats?: number; startTime?: number },
   ) {
     if (!this.allowEvent(client, WS_EVENTS.START_METRONOME)) return;
     const roomUuid = this.clientRooms.get(client.id);
@@ -222,7 +222,9 @@ export class MetronomeGateway
       typeof data?.tempo === 'number' ? this.clampTempo(data.tempo) : undefined;
     const beats =
       typeof data?.beats === 'number' ? this.clampBeats(data.beats) : undefined;
-    this.metronomeService.startMetronome(roomUuid, tempo, beats);
+    const startTime =
+      typeof data?.startTime === 'number' ? data.startTime : undefined;
+    this.metronomeService.startMetronome(roomUuid, tempo, beats, startTime);
   }
 
   @SubscribeMessage(WS_EVENTS.STOP_METRONOME)

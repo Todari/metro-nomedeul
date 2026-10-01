@@ -328,15 +328,19 @@ export class Metronome {
     return this.pendingServerState?.isPlaying === true;
   }
 
-  public async start(serverState?: MetronomeState) {
-    if (this.isStarting || this.isPlaying) return;
+  /** 시작했으면 로컬 시계 기준 시작 시각(ms), 이미 재생 중이거나 시작하지 못했으면 null */
+  public async start(serverState?: MetronomeState): Promise<number | null> {
+    if (this.isStarting || this.isPlaying) return null;
     this.isStarting = true;
+    // 사용자가 직접 시작하면 서버 확인을 기다리지 않고 계속 재생한다.
+    // 이후 서버가 정지 상태를 보내면 아래 가드나 handleServerState가 멈춘다.
+    if (!serverState) this.latestServerIsPlaying = true;
 
     try {
       if (!this.audioContext) {
-        if (!this.createAudioContext()) return;
+        if (!this.createAudioContext()) return null;
       }
-      if (!this.audioContext) return;
+      if (!this.audioContext) return null;
 
       await this.initialize();
 
@@ -384,7 +388,9 @@ export class Metronome {
       // If server sent stop while we were async starting, stop immediately
       if (!this.latestServerIsPlaying) {
         this.stopInternal();
+        return null;
       }
+      return this.startTime;
     } finally {
       this.isStarting = false;
     }

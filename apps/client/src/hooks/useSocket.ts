@@ -32,6 +32,7 @@ export const useSocket = ({
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const clockOffsetRef = useRef(0);
+  const isClockSyncedRef = useRef(false);
 
   const onMetronomeStateRef = useRef(onMetronomeState);
   const onBeatSyncRef = useRef(onBeatSync);
@@ -101,6 +102,7 @@ export const useSocket = ({
             cleanup();
             offsets.sort((a, b) => a - b);
             clockOffsetRef.current = offsets[Math.floor(offsets.length / 2)];
+            isClockSyncedRef.current = true;
             resolve();
           }
         };
@@ -163,11 +165,15 @@ export const useSocket = ({
       activeSyncCleanup?.();
     });
 
+    // 첫 시계 동기화 전 상태는 오프셋 0으로 계산돼 박자가 어긋나므로 버린다.
+    // 동기화가 끝나면 위에서 REQUEST_SYNC로 최신 상태를 다시 받는다.
     socket.on(WS_EVENTS.METRONOME_STATE, (data: MetronomeState) => {
+      if (!isClockSyncedRef.current) return;
       onMetronomeStateRef.current?.(data);
     });
 
     socket.on(WS_EVENTS.BEAT_SYNC, (data: MetronomeState) => {
+      if (!isClockSyncedRef.current) return;
       onBeatSyncRef.current?.(data);
     });
 

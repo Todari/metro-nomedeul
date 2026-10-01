@@ -27,6 +27,8 @@ export interface MetronomeAction {
   action: MetronomeActionType;
   tempo?: number;
   beats?: number;
+  /** startMetronome: 시작한 클라이언트가 첫 박을 낸 시각(서버 시계 기준 ms) */
+  startTime?: number;
 }
 
 export type MetronomeActionType =
