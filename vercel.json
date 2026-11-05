@@ -6,6 +6,9 @@
   "outputDirectory": "apps/client/dist",
   "routes": [
     { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" }
+    { "src": "^/$", "dest": "/index.html" },
+    { "src": "^/privacy/?$", "dest": "/privacy.html" },
+    { "src": "^/terms/?$", "dest": "/terms.html" },
+    { "src": "/(.*)", "dest": "/app.html" }
   ]
 }
