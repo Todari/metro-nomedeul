@@ -1,11 +1,10 @@
 import './ga';
 import { StrictMode } from 'react'
 import './index.css'
-import { css } from "../styled-system/css";
-import { container } from "../styled-system/patterns";
-import { createRoot } from 'react-dom/client'
+import { createRoot, hydrateRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AppRouter } from './routes.tsx';
+import { AppShell } from './AppShell';
 import { initSentry, Sentry } from './utils/sentry';
 import { ErrorFallback } from './components/ErrorFallback';
 
@@ -13,25 +12,23 @@ initSentry();
 
 const queryClient = new QueryClient();
 
-createRoot(document.getElementById('root')!).render(
+const tree = (
   <StrictMode>
     <Sentry.ErrorBoundary fallback={<ErrorFallback />}>
       <QueryClientProvider client={queryClient}>
-        <div
-          className={
-            css({
-              minH: '100dvh',
-              bg: 'neutral.900',
-              color: 'white',
-              fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Noto Sans KR, Apple SD Gothic Neo, sans-serif',
-            })
-          }
-        >
-          <div className={container({ maxW: '720px' })}>
-            <AppRouter />
-          </div>
-        </div>
+        <AppShell>
+          <AppRouter />
+        </AppShell>
       </QueryClientProvider>
     </Sentry.ErrorBoundary>
-  </StrictMode>,
-)
+  </StrictMode>
+);
+
+const root = document.getElementById('root')!;
+// 빌드 시 미리 렌더링된 페이지(/, /privacy, /terms)는 하이드레이션하고,
+// 빈 셸(app.html: /room/* 등)은 처음부터 렌더링한다. scripts/prerender.mjs 참고.
+if (root.hasChildNodes()) {
+  hydrateRoot(root, tree);
+} else {
+  createRoot(root).render(tree);
+}

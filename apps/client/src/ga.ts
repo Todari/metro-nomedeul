@@ -7,7 +7,8 @@ declare global {
 
 const GA_ID = import.meta.env.VITE_GA_ID;
 
-if (GA_ID) {
+// typeof document 검사: 빌드 시 정적 렌더링(scripts/prerender.mjs)에서도 이 모듈이 로드된다.
+if (GA_ID && typeof document !== 'undefined') {
   const script = document.createElement('script');
   script.async = true;
   script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`;

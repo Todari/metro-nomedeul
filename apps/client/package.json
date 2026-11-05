@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "panda codegen --watch & vite",
-    "build": "panda codegen && tsc -b && vite build",
+    "build": "panda codegen && tsc -b && vite build && node scripts/prerender.mjs",
     "prepare": "panda codegen",
     "postinstall": "panda codegen",
     "lint": "eslint .",

@@ -4,8 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>메트로놈들 - 밴드 합주용 실시간 동기화 메트로놈</title>
-    <meta name="description" content="여러 사람이 각자의 이어폰으로 동시에 같은 메트로놈 클릭을 들을 수 있는 실시간 동기화 웹앱. 방을 만들고, QR로 공유하고, 함께 연주하세요." />
+    <title>앱 없이 쓰는 온라인 그룹 메트로놈 | 메트로놈들</title>
+    <meta name="description" content="앱 설치·회원가입 없이 브라우저에서 바로 여는 무료 온라인 그룹 메트로놈. 방을 만들고 QR·링크로 초대하면 밴드·합창·댄스 멤버 모두의 기기에서 같은 클릭이 동시에 울립니다." />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -20,20 +21,26 @@
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://metronome.todari.dev/" />
-    <meta property="og:title" content="메트로놈들 - 밴드 합주용 실시간 동기화 메트로놈" />
-    <meta property="og:description" content="여러 사람이 각자의 이어폰으로 동시에 같은 메트로놈 클릭을 들을 수 있는 실시간 동기화 웹앱. 방을 만들고, QR로 공유하고, 함께 연주하세요." />
+    <meta property="og:title" content="앱 없이 쓰는 온라인 그룹 메트로놈 | 메트로놈들" />
+    <meta property="og:description" content="앱 설치·회원가입 없이 브라우저에서 바로 여는 무료 온라인 그룹 메트로놈. 방을 만들고 QR·링크로 초대하면 밴드·합창·댄스 멤버 모두의 기기에서 같은 클릭이 동시에 울립니다." />
     <meta property="og:site_name" content="메트로놈들" />
     <meta property="og:locale" content="ko_KR" />
+    <meta property="og:image" content="https://metronome.todari.dev/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="메트로놈들 - 앱 설치 없이 바로 쓰는 온라인 그룹 메트로놈" />
 
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="메트로놈들 - 밴드 합주용 실시간 동기화 메트로놈" />
-    <meta name="twitter:description" content="여러 사람이 각자의 이어폰으로 동시에 같은 메트로놈 클릭을 들을 수 있는 실시간 동기화 웹앱." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="앱 없이 쓰는 온라인 그룹 메트로놈 | 메트로놈들" />
+    <meta name="twitter:description" content="앱 설치·회원가입 없이 브라우저에서 바로 여는 무료 온라인 그룹 메트로놈. 방을 만들고 QR·링크로 초대하면 모두의 기기에서 같은 클릭이 동시에 울립니다." />
+    <meta name="twitter:image" content="https://metronome.todari.dev/og.png" />
 
     <!-- Additional SEO -->
-    <meta name="keywords" content="메트로놈, 밴드, 합주, 클릭트랙, 동기화, 실시간, metronome, band, sync" />
-    <meta name="author" content="메트로놈들" />
+    <meta name="keywords" content="온라인 메트로놈, 그룹 메트로놈, 웹 메트로놈, 합주 메트로놈, 동기화 메트로놈, 공유 메트로놈, 메트로놈 앱 없이, 밴드 합주, 합창, 댄스 연습, online metronome, group metronome, shared metronome, synchronized metronome" />
+    <meta name="author" content="Todari" />
 
+    <!-- FAQPage 구조화 데이터는 src/App.tsx의 FAQ 목록에서 생성해 본문에 넣는다(내용 중복 방지). -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -43,7 +50,8 @@
             "@id": "https://metronome.todari.dev/#website",
             "url": "https://metronome.todari.dev/",
             "name": "메트로놈들",
-            "description": "여러 연주자가 네트워크를 통해 동일한 박자에 동기화되는 실시간 협업 메트로놈",
+            "alternateName": ["Metronomdeul", "온라인 그룹 메트로놈"],
+            "description": "앱 설치 없이 브라우저에서 바로 쓰는 무료 온라인 그룹 메트로놈. 여러 기기가 서버 시각을 기준으로 같은 클릭을 동시에 재생합니다.",
             "inLanguage": "ko-KR",
             "publisher": { "@id": "https://metronome.todari.dev/#org" }
           },
@@ -51,77 +59,33 @@
             "@type": "Organization",
             "@id": "https://metronome.todari.dev/#org",
             "name": "Todari",
-            "url": "https://todari.dev"
+            "url": "https://todari.dev",
+            "sameAs": ["https://github.com/Todari"]
           },
           {
             "@type": "WebApplication",
             "@id": "https://metronome.todari.dev/#app",
             "name": "메트로놈들",
+            "alternateName": ["Metronomdeul", "온라인 그룹 메트로놈"],
             "applicationCategory": "MultimediaApplication",
-            "operatingSystem": "Web",
+            "applicationSubCategory": "Metronome",
+            "operatingSystem": "Web browser (iOS, Android, Windows, macOS)",
+            "browserRequirements": "Web Audio API를 지원하는 최신 Chrome, Safari, Firefox, Edge",
             "url": "https://metronome.todari.dev/",
-            "description": "방을 만들고 QR로 공유하면 여러 연주자가 같은 클릭을 동시에 들을 수 있는 무료 실시간 동기화 메트로놈 웹앱.",
+            "image": "https://metronome.todari.dev/og.png",
+            "sameAs": ["https://github.com/Todari/metro-nomedeul"],
+            "description": "앱 설치·회원가입 없이 브라우저에서 바로 쓰는 무료 온라인 그룹 메트로놈. 방을 만들고 QR 코드나 링크로 초대하면 PC·스마트폰 등 여러 기기가 각자의 이어폰에서 같은 클릭을 동시에 울립니다. 밴드 합주, 합창, 댄스·군무 연습용.",
             "inLanguage": "ko-KR",
+            "isAccessibleForFree": true,
             "offers": { "@type": "Offer", "price": "0", "priceCurrency": "KRW" },
+            "keywords": "온라인 메트로놈, 그룹 메트로놈, 웹 메트로놈, 합주 메트로놈, 동기화 메트로놈, online group metronome, shared metronome",
             "featureList": [
-              "방 생성 및 QR 공유",
-              "여러 클라이언트 실시간 BPM 동기화",
-              "재생 중 BPM/박자표 변경",
-              "네트워크 지연 보정"
-            ]
-          },
-          {
-            "@type": "FAQPage",
-            "@id": "https://metronome.todari.dev/#faq",
-            "mainEntity": [
-              {
-                "@type": "Question",
-                "name": "정말 같은 박자로 동시에 들리나요?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "서버 시간 기준으로 비트를 스케줄하고 클라이언트마다 네트워크 왕복 시간(RTT)을 측정해 보정합니다. 일반적인 Wi-Fi 환경에서 ±5~10ms 오차로 동기화되어 실연주에 충분합니다."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "한 방에 몇 명까지 동시에 접속할 수 있나요?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "한 방당 최대 20명까지 동시에 접속 가능합니다. 합주, 합창, 군무 등 일반적인 그룹 활동에 충분한 규모입니다."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "방은 얼마나 유지되나요?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "방 생성 후 24시간 동안 유지되며, 그 이후엔 자동 삭제됩니다. 장기 사용이 필요하면 그때마다 새 방을 만들어 사용해주세요."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "어떤 브라우저에서 동작하나요?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "Chrome, Safari, Firefox, Edge 모두 지원하며 모바일(iOS / Android)에서도 작동합니다. Web Audio API를 사용하므로 최신 버전 브라우저를 권장합니다."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "회원가입이나 결제가 필요한가요?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "아니요. 회원가입, 로그인, 결제 모두 필요 없습니다. 방을 만들고 링크 또는 QR 코드만 공유하면 바로 사용할 수 있습니다."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "인터넷 연결이 끊기면 어떻게 되나요?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "자동으로 재연결을 시도하며, 복구되는 즉시 다른 참가자들과 박자가 다시 동기화됩니다. 잠깐 끊겨도 합주를 멈출 필요 없습니다."
-                }
-              }
+              "앱 설치·회원가입 없이 브라우저에서 바로 사용",
+              "방 생성 후 QR 코드·링크로 초대",
+              "한 방 최대 20명 실시간 BPM·박자 동기화",
+              "PC·스마트폰·태블릿 혼용 가능",
+              "재생 중 BPM·박자표 변경",
+              "서버 시각 기준 네트워크 지연 보정"
             ]
           }
         ]
