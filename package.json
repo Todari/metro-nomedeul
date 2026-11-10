@@ -41,7 +41,8 @@
       "postcss-selector-parser@<7.1.6": "^7.1.6",
       "deepmerge-ts@<8.0.0": "^8.0.0",
       "multer@<2.5.0": "^2.5.0",
-      "nanoid@<3.3.18": "^3.3.18"
+      "nanoid@<3.3.18": "^3.3.18",
+      "body-parser@>=2.0.0 <2.4.0": "2.4.0"
     }
   },
   "packageManager": "pnpm@9.15.0"

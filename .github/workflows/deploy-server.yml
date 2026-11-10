@@ -71,4 +71,11 @@ jobs:
               sleep 2
             done
             [ "$healthy" = true ] || exit 1
+            docker compose exec -T metronomdeul-server node -e '
+              const expressRequire = require("node:module").createRequire(require.resolve("express"));
+              const version = expressRequire("body-parser/package.json").version;
+              const [major, minor] = version.split(".").map(Number);
+              console.log("Runtime body-parser: " + version);
+              if (!(major > 2 || (major === 2 && minor >= 4))) process.exit(1);
+            '
             echo "Deploy successful!"
